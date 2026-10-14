@@ -63,7 +63,7 @@
     [state.patients, state.analyses] = await Promise.all([S.all('patients'), S.all('analyses')]);
     state.clinic = await S.setting('clinic', { name: 'Clínica Motion Fisio', physio: '', contact: '', logo: null });
     const seeded = await S.setting('seeded', false);
-    const DEMO_VERSION = 5, dv = await S.setting('demoVersion', 0);
+    const DEMO_VERSION = 6, dv = await S.setting('demoVersion', 0);
     const oldDemo = state.analyses.some((a) => a.demo && a.patientId !== 'sample-p') && dv !== DEMO_VERSION;
     if (oldDemo) await clearDemo(true);
     if ((!seeded && !state.patients.length) || oldDemo) { await loadDemo(); await S.setSetting('seeded', true); await S.setSetting('demoVersion', DEMO_VERSION); }

@@ -19,8 +19,8 @@
     const s = Math.min(380 / ((x1 - x0) * sim.meta.width || 1), 220 / ((y1 - y0) * sim.meta.height || 1));
     const lm = best.lm.map((p) => [((p[0] - (x0 + x1) / 2) * sim.meta.width * s + 240) / 480, ((p[1] - (y0 + y1) / 2) * sim.meta.height * s + 140) / 270, 0, p[3]]);
     ctx.strokeStyle = 'rgba(143,165,191,.35)'; ctx.setLineDash([6, 6]); const gy = Math.max(...lm.map((p) => p[1])) * 270 + 6; ctx.beginPath(); ctx.moveTo(0, gy); ctx.lineTo(480, gy); ctx.stroke(); ctx.setLineDash([]);
-    window.MCPose.drawFrame(ctx, null, lm);
-    ctx.fillStyle = 'rgba(234,242,255,.65)'; ctx.font = '600 12px "IBM Plex Mono", monospace'; ctx.fillText('EJEMPLO · movimiento sintético', 12, 20);
+    window.MCPose.drawFrame(ctx, null, lm, { neutral: true });
+    ctx.fillStyle = 'rgba(234,242,255,.65)'; ctx.font = '600 12px "IBM Plex Mono", monospace'; ctx.fillText('DEMO · sim', 12, 20); // texto neutro: la imagen se guarda y se ve en los dos idiomas
     return c.toDataURL('image/jpeg', 0.85);
   }
 

@@ -4,6 +4,7 @@
 
 - README en español e inglés con una ruta de 5 minutos por el proyecto y una tabla de lo que demuestra, con enlaces al código.
 - Imagen de los informes actualizada (clínico, paciente e inglés) y datos de ejemplo regenerados con el motor actual (`npm run ejemplos` los rehace).
+- Los fotogramas de los pacientes de ejemplo ya no llevan texto en un idioma concreto (el color indica el lado), así que se ven bien en español y en inglés.
 
 ## 3.4.0 · Informe para el paciente e inglés
 

@@ -77,7 +77,7 @@
         const v = window.MCMetrics.kneeFlex(f, meta, side);
         if (v == null) continue;
         const p = f.lm[idx];
-        const txt = `${side === 'L' ? 'I' : 'D'} ${Math.round(v)}°`;
+        const txt = opts.neutral ? `${Math.round(v)}°` : `${side === 'L' ? 'I' : 'D'} ${Math.round(v)}°`; // neutral: sin letra, el color indica el lado
         const w = ctx.measureText(txt).width;
         const x = side === 'L' ? p[0] * W + s * 6 : p[0] * W - w - s * 6, y = p[1] * H + (side === 'L' ? 0 : s * 9);
         ctx.fillStyle = 'rgba(5,12,22,.75)';
