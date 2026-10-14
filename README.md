@@ -149,7 +149,12 @@ npm run coverage    # cobertura del motor
 npm run validate    # verificación con 30 sujetos simulados por prueba
 npm run lint        # estilo
 npm run example     # usar el motor desde Node con un vídeo real
+npm run e2e         # la app completa en Chromium con el vídeo real
+npm run ejemplos    # regenera los informes PDF y las capturas de examples/ y docs/img
+npm run concordancia -- datos.json informe.md   # concordancia con un laboratorio (validacion/)
 ```
+
+La app abre en el idioma del navegador; `?lang=en` o `?lang=es` en la dirección lo fija.
 
 ## Cómo grabar
 

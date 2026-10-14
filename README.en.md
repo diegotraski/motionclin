@@ -100,6 +100,8 @@ Design decisions and rejected alternatives: [docs/ARQUITECTURA.md](docs/ARQUITEC
 git clone https://github.com/diegotraski/motionclin.git && cd motionclin
 python3 -m http.server 8080        # open http://localhost:8080
 npm install && npm test && npm run coverage && npm run validate   # Node 22+
+npm run e2e                         # full app in Chromium on the real video
+npm run concordancia -- data.json   # agreement analysis against lab data (validacion/)
 ```
 
 ## Limitations
