@@ -42,17 +42,8 @@
     return '<span class="pill ok">Correcto</span>';
   }
 
-  // Guardar archivo: en claude.ai usa la capacidad de descargas; fuera, un enlace de descarga normal
+  // Guardar archivo mediante un enlace de descarga
   async function saveFile(blob, filename) {
-    try {
-      if (window.claude && typeof window.claude.use === 'function') {
-        const dl = await window.claude.use('downloads');
-        if (dl) {
-          try { await dl.save({ filename, data: blob }); toast('Archivo listo: ' + filename); } catch (e) { if (e && e.code !== 'declined') toast('No se ha podido guardar el archivo (' + (e.message || e.code) + ').', true); }
-          return;
-        }
-      }
-    } catch (e) { /* sin capacidad: descarga normal */ }
     const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = filename;
     document.body.appendChild(a); a.click(); setTimeout(() => { URL.revokeObjectURL(a.href); a.remove(); }, 1500);
     toast('Descargado: ' + filename);
@@ -943,7 +934,7 @@
     route();
     // la bienvenida no tapa un enlace directo a una sesión o comparación (p. ej., desde el README)
     if (!(await S.setting('welcomed', false)) && !navigator.webdriver && !/^#(comparar|sesion|informe|pacientes)-/.test(location.hash)) openWelcome();
-    if ('serviceWorker' in navigator && !window.claude && /^(https:|http:\/\/localhost)/.test(location.href)) navigator.serviceWorker.register('sw.js').catch((e) => console.warn('Sin modo sin conexión:', e));
+    if ('serviceWorker' in navigator && /^(https:|http:\/\/localhost)/.test(location.href)) navigator.serviceWorker.register('sw.js').catch((e) => console.warn('Sin modo sin conexión:', e));
     const ms = $('#model-status');
     setTimeout(() => {
       const t0 = performance.now();
