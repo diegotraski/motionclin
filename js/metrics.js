@@ -36,10 +36,10 @@
 
   // ======================= estadística =======================
   function lgamma(x) {
-    const c = [76.18009172947146, -86.50532032941677, 24.01409824083091, -1.231739572450155, 0.1208650973866179e-2, -0.5395239384953e-5];
+    const c = [76.1800917294715, -86.5053203294168, 24.0140982408309, -1.23173957245015, 0.00120865097386618, -0.00000539523938495]; // Lanczos (Numerical Recipes)
     let y = x, tmp = x + 5.5; tmp -= (x + 0.5) * Math.log(tmp); let ser = 1.000000000190015;
     for (let j = 0; j < 6; j++) ser += c[j] / ++y;
-    return -tmp + Math.log((2.5066282746310005 * ser) / x);
+    return -tmp + Math.log((2.5066282746310002 * ser) / x); // √(2π)
   }
   function betacf(a, b, x) {
     const MAXIT = 300, EPS = 3e-14, FPMIN = 1e-300; const qab = a + b, qap = a + 1, qam = a - 1; let c = 1, d = 1 - (qab * x) / qap;
@@ -469,7 +469,9 @@
       metrics.push(mk('kneeLR' + s, `Rodilla ${sl}: flexión en respuesta a la carga`, pick(st, 'kneeLR'), '°', { group: G3, rel: rk, ref: { lo: 10, hi: 25, text: '10–25°', src: 'perry' } }));
       metrics.push(mk('kneeIC' + s, `Rodilla ${sl}: flexión en el contacto inicial`, pick(st, 'kneeIC'), '°', { group: G3, rel: rk, ref: { lo: 0, hi: 10, text: '0–10°', src: 'perry' } }));
       metrics.push(mk('gvs' + s, `Rodilla ${sl}: desviación de la curva normal (GVS)`, null, '°', { group: G3, value: gvs(s), n: cycles['knee' + s] ? cycles['knee' + s].n : 0, rel: rk, ref: { hi: 8, text: '< 8° (orientativo)', src: 'baker' } }));
-      metrics.push(mk('hipROM' + s, `Cadera ${sl}: rango sagital`, pick(strides[s].filter((x) => x.hip), 'hipROM'), '°', { group: G3, rel: strides[s].filter((x) => x.hip).length >= 2 ? relKin : 'baja', ref: { lo: 35, hi: 50, text: '35–50°', src: 'perry' } }));
+      const nh = strides[s].filter((x) => x.hip).length;
+      const rh = lower(nh >= 4 ? relKin : nh >= 2 ? lower(relKin, 'media') : 'baja', sideVis[s] >= 0.8 ? 'alta' : sideVis[s] >= 0.6 ? 'media' : 'baja');
+      metrics.push(mk('hipROM' + s, `Cadera ${sl}: rango sagital`, pick(strides[s].filter((x) => x.hip), 'hipROM'), '°', { group: G3, rel: rh, ref: { lo: 35, hi: 50, text: '35–50°', src: 'perry' } }));
     }
     const trunkWalk = trunk.filter((x, i) => dirArr[i]);
     metrics.push(mk('trunk', 'Inclinación del tronco (media)', null, '°', { group: G3, value: mean(trunkWalk.length ? trunkWalk : trunk), n: null, rel: relKin }));

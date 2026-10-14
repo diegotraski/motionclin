@@ -1,5 +1,5 @@
 /* MotionClin · service worker: la app y el modelo de visión quedan guardados para usarla sin conexión. */
-const VERSION = 'motionclin-v3.1';
+const VERSION = 'motionclin-v3.1.2';
 const SHELL = ['./', 'index.html', 'manifest.webmanifest', 'css/app.css',
   'js/metrics.js', 'js/storage.js', 'js/charts.js', 'js/pose.js', 'js/report.js', 'js/replay.js', 'js/player.js', 'js/synth.js', 'js/demo.js', 'js/app.js',
   'vendor/jspdf/jspdf.umd.min.js', 'vendor/mediapipe-pose/pose.js', 'icons/icon-192.png'];

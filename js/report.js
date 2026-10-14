@@ -54,7 +54,6 @@
     // ---- resumen ----
     const cmpPrev = prev && prev.version === 2 && a.version === 2 ? MM.compare(prev, a) : [];
     const first = history[0] && history[0].id !== a.id ? history[0] : null;
-    const cmpFirst = first && first.version === 2 && a.version === 2 ? MM.compare(first, a) : [];
     const mainPrev = prev && prev.version === 2 ? MM.mainCompare(prev, a) : null, mainFirst = first && first.version === 2 ? MM.mainCompare(first, a) : null;
     doc.setFillColor(...SOFT); doc.roundedRect(M, y, CW, 20, 2, 2, 'F');
     font('normal', 8, MUTED); doc.text(T(a.main.label.toUpperCase()), M + 4, y + 6);
@@ -79,7 +78,7 @@
     const gh = gw * 250 / 640;
     doc.addImage(chartImg(spec.opts, 640, 250), 'PNG', gx, y + 3.5, gw, gh, undefined, 'FAST');
     y += Math.max(rowH + 6, gh + 6);
-    if (spec.note) { para(spec.note, 7.5, MUTED); y += 1; }
+    if (spec.note) { para(spec.note, 7.5, MUTED); y += 4; }
 
     // ---- tabla de resultados ----
     heading('Resultados');

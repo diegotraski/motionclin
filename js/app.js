@@ -17,7 +17,6 @@
   const initials = (n) => String(n || '?').split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0].toUpperCase()).join('');
   const dec = (v) => (typeof v === 'number' || typeof v === 'string' ? String(v).replace('.', ',') : v);
   const unitSep = (u) => (!u || u === '°' || u === '%' ? '' : ' ');
-  const fmtVal = (m) => (m.value == null ? '–' : `${dec(m.value)}${unitSep(m.unit)}${m.unit || ''}`);
   const fmtValSd = (m) => (m.value == null ? '–' : `${dec(m.value)}${m.sd != null ? ' ± ' + dec(m.sd) : ''}${unitSep(m.unit)}${m.unit || ''}`);
   const fmtP = (p) => (p == null ? '–' : p < 0.001 ? '< 0,001' : dec(p.toFixed(3)));
   const patientById = (id) => state.patients.find((p) => p.id === id);
@@ -64,7 +63,7 @@
     [state.patients, state.analyses] = await Promise.all([S.all('patients'), S.all('analyses')]);
     state.clinic = await S.setting('clinic', { name: 'Clínica Motion Fisio', physio: '', contact: '', logo: null });
     const seeded = await S.setting('seeded', false);
-    const DEMO_VERSION = 3, dv = await S.setting('demoVersion', 0);
+    const DEMO_VERSION = 4, dv = await S.setting('demoVersion', 0);
     const oldDemo = state.analyses.some((a) => a.demo && a.patientId !== 'sample-p') && dv !== DEMO_VERSION;
     if (oldDemo) await clearDemo(true);
     if ((!seeded && !state.patients.length) || oldDemo) { await loadDemo(); await S.setSetting('seeded', true); await S.setSetting('demoVersion', DEMO_VERSION); }
@@ -877,7 +876,7 @@
     $('#st-logo-prev').addEventListener('click', async (e) => { if (e.target.id === 'st-logo-del') { state.clinic.logo = null; await S.setSetting('clinic', state.clinic); render.ajustes(); } });
     $('#st-export').onclick = exportBackup;
     $('#st-import').addEventListener('change', (e) => e.target.files[0] && importBackup(e.target.files[0]));
-    $('#st-demo').onclick = async () => { await clearDemo(true); await loadDemo(); await S.setSetting('demoVersion', 3); toast('Datos de ejemplo cargados'); render.ajustes(); };
+    $('#st-demo').onclick = async () => { await clearDemo(true); await loadDemo(); await S.setSetting('demoVersion', 4); toast('Datos de ejemplo cargados'); render.ajustes(); };
     $('#st-wipe').onclick = () => ($('#st-wipe-confirm').hidden = false);
     $('#st-wipe-no').onclick = () => ($('#st-wipe-confirm').hidden = true);
     $('#st-wipe-yes').onclick = async () => {
@@ -900,7 +899,8 @@
     $('#kpis').innerHTML = '<div class="card kpi" style="grid-column:1/-1"><div class="label">Preparando</div><div class="sub">Generando los pacientes de ejemplo y sus análisis con el motor (solo la primera vez)…</div></div>';
     try { await load(); } catch (e) { console.error(e); toast('No se han podido cargar los datos guardados: ' + e.message, true); }
     route();
-    if (!(await S.setting('welcomed', false)) && !navigator.webdriver) openWelcome();
+    // la bienvenida no tapa un enlace directo a una sesión o comparación (p. ej., desde el README)
+    if (!(await S.setting('welcomed', false)) && !navigator.webdriver && !/^#(comparar|sesion|informe|pacientes)-/.test(location.hash)) openWelcome();
     if ('serviceWorker' in navigator && !window.claude && /^(https:|http:\/\/localhost)/.test(location.href)) navigator.serviceWorker.register('sw.js').catch((e) => console.warn('Sin modo sin conexión:', e));
     const ms = $('#model-status');
     setTimeout(() => {

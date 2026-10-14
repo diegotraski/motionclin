@@ -6,17 +6,28 @@ on:
   pull_request:
 
 jobs:
-  motor:
-    name: Motor de análisis
+  calidad:
+    name: Estilo, pruebas y verificación
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
-      - name: Pruebas con valores conocidos
-        run: node tests/metrics.test.js
+          node-version: 22
+      - name: Instalar herramientas de desarrollo
+        run: npm install --no-audit --no-fund
+      - name: Estilo (ESLint)
+        run: npm run lint
+      - name: Pruebas con valores conocidos y cobertura
+        run: npm run coverage 2>&1 | tee cobertura.txt
       - name: Verificación con 30 sujetos simulados por prueba
-        run: node tests/validation.js | tee validacion.md
+        run: npm run validate | tee validacion.md
+      - name: Ejemplo de uso del motor desde Node
+        run: npm run example
       - name: Resumen
-        run: cat validacion.md >> "$GITHUB_STEP_SUMMARY"
+        run: |
+          echo '## Cobertura del motor' >> "$GITHUB_STEP_SUMMARY"
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          grep -E 'file|metrics.js|synth.js|replay.js|all files' cobertura.txt >> "$GITHUB_STEP_SUMMARY" || true
+          echo '```' >> "$GITHUB_STEP_SUMMARY"
+          cat validacion.md >> "$GITHUB_STEP_SUMMARY"

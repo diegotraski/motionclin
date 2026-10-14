@@ -1,11 +1,10 @@
 // Validación del motor con movimiento sintético de valores conocidos.
-// Ejecutar: node tests/metrics.test.js
+// Ejecutar: node --test tests/   (cobertura: node --test --experimental-test-coverage tests/)
 const assert = require('assert');
 const M = require('../js/metrics.js');
 const S = require('../js/synth.js');
 
-let passed = 0, failed = 0;
-function test(name, fn) { try { fn(); passed++; console.log('✓', name); } catch (e) { failed++; console.error('✗', name, '\n   ', e.message); } }
+const { test } = require('node:test');
 const near = (a, b, tol, what) => assert.ok(Math.abs(a - b) <= tol, `${what}: ${a} vs ${b} (±${tol})`);
 const get = (r, k) => { const m = r.metrics.find((x) => x.key === k); return m ? m.value : undefined; };
 
@@ -161,5 +160,3 @@ test('Sin persona → error claro', () => {
   assert.throws(() => M.analyze('gait', Array.from({ length: 50 }, (_, i) => ({ t: i / 10, lm: null })), { width: 1, height: 1 }), /No se ha detectado/);
 });
 
-console.log(`\n${passed} superadas, ${failed} fallidas`);
-if (failed) process.exitCode = 1;

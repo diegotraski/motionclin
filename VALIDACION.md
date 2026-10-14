@@ -6,9 +6,9 @@
 |---|---|---|---|---|---|
 | Marcha · cadencia | 30 | 0,02 pasos/min | 0,24 pasos/min | 0,46 pasos/min | 0 |
 | Marcha · duración de zancada | 30 | 0 s | 0,003 s | 0,005 s | 0 |
-| Marcha · velocidad | 30 | 0,01 m/s | 0,012 m/s | 0,029 m/s | 0 |
-| Marcha · flexión máx. rodilla izq. | 30 | -0,71 ° | 0,81 ° | 2,44 ° | 0 |
-| Marcha · flexión máx. rodilla der. | 30 | -0,61 ° | 0,68 ° | 2,13 ° | 0 |
+| Marcha · velocidad | 30 | 0,012 m/s | 0,013 m/s | 0,049 m/s | 0 |
+| Marcha · flexión máx. rodilla izq. | 30 | -0,84 ° | 0,95 ° | 2,79 ° | 0 |
+| Marcha · flexión máx. rodilla der. | 30 | -0,71 ° | 0,76 ° | 2,44 ° | 0 |
 | Sentadilla lateral · repeticiones | 30 | 0  | 0  | 0  | 0 |
 | Sentadilla lateral · profundidad | 30 | -0,11 ° | 0,23 ° | 0,51 ° | 0 |
 | Sentadilla frontal · profundidad estimada | 30 | -0,06 ° | 0,27 ° | 0,58 ° | 0 |
@@ -20,7 +20,7 @@ Esto verifica que el procesado (filtrado, eventos, ciclos, escala y estadística
 
 ### Errores encontrados gracias a esta verificación
 
-- **Referencia izquierda/derecha invertida.** Si el primer fotograma llegaba con las piernas intercambiadas, la corrección por continuidad arrastraba el error a toda la secuencia (caso 21: error de 7° en la rodilla). Ahora, si hay que corregir más de la mitad de los fotogramas, se respeta la etiqueta mayoritaria del modelo. Error máximo de rodilla: de 7,1° a 2,4°. Hay una prueba de regresión en `tests/metrics.test.js`.
+- **Referencia izquierda/derecha invertida.** Si el primer fotograma llegaba con las piernas intercambiadas, la corrección por continuidad arrastraba el error a toda la secuencia (caso 21: error de 7° en la rodilla). Ahora, si hay que corregir más de la mitad de los fotogramas, se respeta la etiqueta mayoritaria del modelo. Error máximo de rodilla: de 7,1° a menos de 3°. Hay una prueba de regresión en `tests/metrics.test.js`.
 - **Frecuencia de muestreo sesgada.** Con tiempos redondeados al milisegundo, la mediana de los intervalos daba 30,3 Hz en lugar de 30 Hz (error del 1 % en cadencia). Ahora se usa la frecuencia media exacta.
 
 ## Prueba con vídeo real
