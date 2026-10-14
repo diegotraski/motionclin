@@ -247,3 +247,14 @@ ol.refs li { color: var(--muted); }
 .wl-steps li span { color: var(--muted); }
 .wl-privacy { margin: 0 0 14px; }
 @media (max-width: 760px) { .wl-hero { grid-template-columns: minmax(0, 1fr); } .wl-hero canvas { max-width: 220px; } .wl-steps { grid-template-columns: minmax(0, 1fr); } .pl-time { margin-left: 0; width: 100%; } }
+
+.tm-speed { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 6px; }
+.tm-speed input { width: 110px; }
+
+.phases { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); gap: 10px; }
+.phase { display: grid; gap: 6px; padding: 0; background: none; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; cursor: pointer; color: var(--text); text-align: left; }
+.phase:hover { border-color: var(--cyan); }
+.phase canvas { width: 100%; height: auto; display: block; }
+.phase span { display: grid; gap: 1px; padding: 0 10px 9px; font-size: 12.5px; }
+.phase i { font-style: normal; color: var(--muted); font-size: 11.5px; font-family: var(--f-mono); }
+@media (max-width: 760px) { .phases { grid-template-columns: repeat(3, minmax(0, 1fr)); } }

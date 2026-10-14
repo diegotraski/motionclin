@@ -45,7 +45,7 @@
     font('bold', 16, INK); doc.text(T(p ? p.name : 'Paciente'), M, y);
     font('normal', 9.5, MUTED);
     const info = [age(p) ? age(p) + ' años' : null, p && p.sex === 'F' ? 'mujer' : p && p.sex === 'M' ? 'hombre' : null, p && p.heightCm ? p.heightCm + ' cm' : null, p && p.condition].filter(Boolean).join(' · ');
-    if (info) doc.text(T(info), M, y + 5.5);
+    if (info) { const ln = doc.splitTextToSize(T(info), CW * 0.56); doc.text(ln[0] + (ln.length > 1 ? '…' : ''), M, y + 5.5); }
     const n = history.findIndex((h) => h.id === a.id) + 1;
     doc.text(T(`${TYPE[a.type]} · Sesión ${n} de ${history.length} · Vista ${a.view}`), PW - M, y, { align: 'right' });
     doc.text(T(`Calidad de captura ${a.quality.score} % · ${a.counts && a.counts.strides != null ? a.counts.strides + ' zancadas' : a.counts && a.counts.reps != null ? a.counts.reps + ' repeticiones' : a.counts && a.counts.windows != null ? a.counts.windows + ' ventanas' : ''}`), PW - M, y + 5.5, { align: 'right' });
@@ -79,6 +79,22 @@
     doc.addImage(chartImg(spec.opts, 640, 250), 'PNG', gx, y + 3.5, gw, gh, undefined, 'FAST');
     y += Math.max(rowH + 6, gh + 6);
     if (spec.note) { para(spec.note, 7.5, MUTED); y += 4; }
+
+    // ---- tira de fases ----
+    const ph = a.replay && window.MCPhases && window.MCReplay ? window.MCPhases.select(a) : null;
+    if (ph) {
+      const frames = window.MCReplay.decode(a.replay), n = ph.items.length, gap = 3, pw = (CW - gap * (n - 1)) / n, phh = pw * 1.25;
+      if (y + phh + 14 > 280) { doc.addPage(); y = M; }
+      font('bold', 9, INK); doc.text(T(a.type === 'gait' ? `Fases del ciclo (zancada ${ph.side})` : 'Fases de la primera repetición'), M, y); y += 2.5;
+      ph.items.forEach((it, k) => {
+        const img = window.MCPhases.render(frames, a.replay.w, a.replay.h, it.t, { width: 240, height: 300, theme: 'light' }).toDataURL('image/png');
+        const x = M + k * (pw + gap);
+        doc.addImage(img, 'PNG', x, y, pw, phh, undefined, 'FAST');
+        font('bold', 7.5, INK); doc.text(T(it.label), x + pw / 2, y + phh + 3.5, { align: 'center' });
+        font('normal', 7, MUTED); doc.text(T(it.pct != null ? `${it.pct} % del ciclo` : `${String(it.t.toFixed(2)).replace('.', ',')} s`), x + pw / 2, y + phh + 6.8, { align: 'center' });
+      });
+      y += phh + 11;
+    }
 
     // ---- tabla de resultados ----
     heading('Resultados');

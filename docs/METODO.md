@@ -55,6 +55,10 @@ $$\text{escala (m/px)} = \frac{0{,}779 \cdot \text{talla}}{\text{hombro–tobill
 
 Supone cámara fija y perpendicular a la marcha.
 
+**Marcha en cinta.** Si la pelvis apenas se desplaza (rango < 0,6 × altura aparente) pero los pies se alternan por delante y por detrás de ella, el registro completo se trata como un único tramo y la dirección se toma de la orientación de los pies (antepié respecto al talón). Los eventos se detectan igual, porque el método de Zeni usa posiciones relativas a la pelvis y se diseñó para cinta. La velocidad no se puede medir desde la imagen: si el clínico introduce la de la cinta, $L_{zancada} = v_{cinta} \cdot T$ y $L_{paso} = v_{cinta} \cdot t_{paso}$.
+
+**Tira de fases.** Para la primera zancada completa se muestran el contacto inicial (0 %), la respuesta a la carga (12 %), el apoyo medio (30 %), el despegue detectado y la oscilación media (85 %), siguiendo la división de Perry y Burnfield (2010).
+
 **Curvas por ciclo.** Cada zancada se remuestrea a 51 puntos (0–100 % en pasos del 2 %) y se promedia por lado. La desviación respecto a una curva normal de referencia (forma basada en Winter, 2009, y Kadaba et al., 1990) se resume con el Gait Variable Score (Baker et al., 2009):
 
 $$GVS = \sqrt{\frac{1}{51}\sum_{i=1}^{51}\left(\theta_i - \theta_i^{ref}\right)^2}$$

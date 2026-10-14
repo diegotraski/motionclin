@@ -1,6 +1,6 @@
 # Ejemplos
 
-Todo lo que hay aquí lo ha generado la propia app, sin editar a mano.
+Todo lo que hay aquí lo ha generado la propia app, sin editar a mano. Los informes y las capturas se regeneran con `npm run ejemplos`.
 
 ## Informes PDF
 

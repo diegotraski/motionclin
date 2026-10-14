@@ -46,16 +46,16 @@
 
   /** Marcha en vista lateral. Devuelve { frames, meta, truth }. */
   function gait(o = {}) {
-    o = Object.assign({ fps: 30, dur: 6, cadence: 110, speed: 1.3, heightCm: 170, kneeScaleL: 1, kneeScaleR: 1, noise: 1.5, swapRate: 0, seed: 1, W: 1280, H: 720, dir: 1, sizeFrac: 0.42, stepJitter: 0, cycleVar: 0 }, o);
+    o = Object.assign({ fps: 30, dur: 6, cadence: 110, speed: 1.3, heightCm: 170, kneeScaleL: 1, kneeScaleR: 1, noise: 1.5, swapRate: 0, seed: 1, W: 1280, H: 720, dir: 1, sizeFrac: 0.42, stepJitter: 0, cycleVar: 0, treadmill: false }, o);
     const r = rng(o.seed), hp = o.sizeFrac * o.H, pxPerM = hp / (o.heightCm / 100), f = o.cadence / 120;
     const vx = o.speed * pxPerM * o.dir, frames = [];
-    const x0 = o.dir > 0 ? 0.08 * o.W : 0.92 * o.W, groundY = 0.9 * o.H;
+    const x0 = o.treadmill ? 0.5 * o.W : o.dir > 0 ? 0.08 * o.W : 0.92 * o.W, groundY = 0.9 * o.H;
     // variabilidad entre ciclos: amplitud de rodilla y velocidad cambian de una zancada a otra
     const cyc = Array.from({ length: 64 }, () => ({ kL: 1 + o.cycleVar * gauss(r), kR: 1 + o.cycleVar * gauss(r), v: 1 + o.cycleVar * 0.8 * gauss(r), f: 1 + o.stepJitter * gauss(r) }));
     let phase = 0, x = x0;
     for (let i = 0; i < Math.round(o.fps * o.dur); i++) {
       const t = i / o.fps;
-      if (i) { const c = cyc[Math.floor(phase) % 64]; phase += (f * c.f) / o.fps; x += (vx * c.v * c.f) / o.fps; } // variabilidad zancada a zancada
+      if (i) { const c = cyc[Math.floor(phase) % 64]; phase += (f * c.f) / o.fps; if (!o.treadmill) x += (vx * c.v * c.f) / o.fps; } // variabilidad zancada a zancada
       const lm = blank();
       const hipC = [x, groundY - PR.hip * hp + 0.01 * hp * Math.cos(4 * Math.PI * phase)];
       upper(lm, hipC, o.dir, hp, 4, 'lateral', 1);

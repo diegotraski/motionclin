@@ -1,10 +1,13 @@
 {
   "name": "motionclin",
-  "version": "3.1.0",
+  "version": "3.2.0",
   "private": true,
   "description": "Análisis biomecánico por vídeo para fisioterapia: MediaPipe Pose en el navegador, métodos publicados y estadística entre sesiones.",
   "homepage": "https://diegotraski.github.io/motionclin/",
-  "repository": { "type": "git", "url": "https://github.com/diegotraski/motionclin.git" },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/diegotraski/motionclin.git"
+  },
   "author": "Diego Trascasa García",
   "license": "MIT",
   "scripts": {
@@ -13,12 +16,17 @@
     "coverage": "node --test --experimental-test-coverage --test-coverage-include=\"js/**\" tests/metrics.test.js",
     "validate": "node tests/validation.js",
     "lint": "eslint .",
-    "example": "node examples/analizar-desde-node.js"
+    "example": "node examples/analizar-desde-node.js",
+    "e2e": "node tests/app.e2e.js",
+    "ejemplos": "node tests/generar-ejemplos.js"
   },
   "devDependencies": {
     "@eslint/js": "9.13.0",
     "eslint": "9.13.0",
-    "globals": "15.11.0"
+    "globals": "15.11.0",
+    "playwright": "1.48.2"
   },
-  "engines": { "node": ">=22" }
+  "engines": {
+    "node": ">=22"
+  }
 }

@@ -383,7 +383,7 @@
 
   // ---------- nuevo análisis ----------
   const GUIDES = {
-    gait: { t: 'marcha', rows: [['Cámara', 'Lateral, fija, perpendicular al recorrido, a la altura de la cadera'], ['Distancia', '3–5 m; el paciente entero y al menos 3–4 m de recorrido en imagen'], ['Recorrido', 'Caminar a ritmo cómodo de lado a lado; ida y vuelta suma más ciclos'], ['Duración', '10–20 s (cuantos más ciclos, menor incertidumbre)'], ['Ficha', 'Talla, año de nacimiento y sexo para velocidad y referencias'], ['Resultados', 'Espaciotemporales, ciclo de rodilla y cadera, simetría, variabilidad']] },
+    gait: { t: 'marcha', rows: [['Cámara', 'Lateral, fija, perpendicular al recorrido, a la altura de la cadera'], ['Distancia', '3–5 m; el paciente entero y al menos 3–4 m de recorrido en imagen'], ['Recorrido', 'Caminar a ritmo cómodo de lado a lado; ida y vuelta suma más ciclos. En cinta: cámara lateral a la altura de la cinta'], ['Duración', '10–20 s (cuantos más ciclos, menor incertidumbre)'], ['Ficha', 'Talla, año de nacimiento y sexo para velocidad y referencias'], ['Resultados', 'Espaciotemporales, ciclo de rodilla y cadera, simetría, variabilidad']] },
     squat: { t: 'sentadilla', rows: [['Vista lateral', 'Profundidad, cadera e inclinación del tronco'], ['Vista frontal', 'Valgo dinámico (FPPA) y simetría'], ['Distancia', '2–4 m, cuerpo entero visible'], ['Repeticiones', '3–5, ritmo controlado'], ['Duración', '10–25 s'], ['Resultados', 'Por repetición y media ± DE']] },
     sts: { t: 'levantarse de la silla ×5', rows: [['Silla', 'Sin reposabrazos, ~43–46 cm de altura, apoyada en la pared'], ['Cámara', 'Lateral, fija, a 2–3 m; silla y paciente enteros'], ['Consigna', '«Levántese y siéntese 5 veces lo más rápido que pueda, brazos cruzados»'], ['Inicio', 'Empezar a grabar con el paciente sentado'], ['Referencia', 'Media por edad (≥ 60 años) y umbral de 15 s'], ['Resultados', 'Tiempo total, tiempo por repetición, regularidad, estrategia del tronco']] },
     balance: { t: 'equilibrio', rows: [['Cámara', 'Frontal, fija, a la altura de la cadera'], ['Distancia', '2–3 m, cuerpo entero visible'], ['Prueba', 'Bipedestación o apoyo monopodal sin moverse del sitio'], ['Duración', '20–30 s (o hasta que apoye el pie)'], ['Seguimiento', 'Repite siempre la misma colocación de cámara'], ['Resultados', 'Velocidad, RMS y rango de oscilación; tiempo monopodal']] },
@@ -392,6 +392,7 @@
     const g = GUIDES[state.type];
     $('#guide-title').textContent = 'Cómo grabar: ' + g.t;
     $('#guide').innerHTML = g.rows.map(([a, b]) => `<div><span>${a}</span><span>${b}</span></div>`).join('');
+    $('#tm-field').hidden = state.type !== 'gait';
   }
   function updateRunButton() { $('#an-run').hidden = state.src !== 'file'; $('#an-run').disabled = !state.file || !!state.abort; }
   function setFile(f) {
@@ -453,6 +454,8 @@
   async function finishAnalysis(patient, out, keyframe, source) {
     $('#an-status').textContent = 'Calculando métricas…';
     const meta = Object.assign({}, out.meta, { patient: { age: ageOf(patient), sex: patient.sex, heightCm: patient.heightCm }, model: +$('#an-precision').value === 1 ? 'Full' : 'Lite' });
+    const tmKmh = parseFloat(String($('#an-tm-speed').value).replace(',', '.'));
+    if (state.type === 'gait' && $('#an-treadmill').checked && tmKmh > 0) meta.treadmillSpeed = Math.round((tmKmh / 3.6) * 1000) / 1000;
     const res = MM.analyze(state.type, out.frames, meta);
     const a = Object.assign(res, { id: uid(), patientId: patient.id, date: new Date().toISOString(), source, keyframe, notes: '', duration: out.meta.duration });
     try { a.replay = window.MCReplay.encode(out.frames, { width: out.meta.width, height: out.meta.height }); } catch (e) { console.warn('No se pudo guardar la secuencia', e); }
@@ -474,6 +477,7 @@
       <div class="card mt"><h3><span>Revisión del movimiento</span><span class="small">${opts.videoURL ? 'Vídeo de esta sesión con el esqueleto detectado' : 'Esqueleto reconstruido con los puntos guardados (el vídeo no se guarda)'}</span></h3>
         <div class="d-player"></div>
         <p class="small" style="margin:8px 0 0">Espacio: reproducir o pausar · ← →: fotograma a fotograma · pulsa en la línea de tiempo o en la gráfica para saltar a ese instante.${a.type === 'gait' ? ' Barras de la línea de tiempo: fase de apoyo de cada pierna; huecos: oscilación.' : ''}</p></div>
+      <div class="card mt d-phases-card" hidden><h3><span>Fases del ciclo</span><span class="small d-phases-sub"></span></h3><div class="phases d-phases"></div></div>
       <div class="grid g2 mt">
         <div class="card"><h3 class="d-chart-title"></h3><div class="chart-box d-chart"></div><div class="chart-box d-chart2"></div><p class="small d-chart-note"></p></div>
         <div class="card">${compareHTML(a)}${first ? `<div class="actions" style="margin-top:12px"><a class="btn sm" href="#comparar-${first.id}~${a.id}">Comparar con la primera sesión, lado a lado →</a></div>` : ''}</div>
@@ -532,6 +536,20 @@
         if (isCycle) { const st = strideAt(a, player.t); if (st) player.seek(st[0] + (Math.max(0, Math.min(100, x)) / 100) * (st[1] - st[0])); }
         else player.seek(x);
       }));
+      // tira de fases: pulsar una fase lleva el reproductor a ese instante
+      const ph = window.MCPhases && window.MCPhases.select(a);
+      if (ph) {
+        q('.d-phases-card').hidden = false;
+        q('.d-phases-sub').textContent = a.type === 'gait' ? `primera zancada completa · pierna ${ph.side} · pulsa para verla en el reproductor` : 'primera repetición · pulsa para verla en el reproductor';
+        const box = q('.d-phases');
+        ph.items.forEach((it) => {
+          const b = document.createElement('button'); b.className = 'phase'; b.type = 'button';
+          b.appendChild(window.MCPhases.render(frames, a.replay.w, a.replay.h, it.t, { width: 200, height: 250 }));
+          const cap = document.createElement('span'); cap.innerHTML = `<b>${esc(it.label)}</b>${it.pct != null ? `<i>${it.pct} % del ciclo</i>` : `<i>${it.t.toFixed(2).replace('.', ',')} s</i>`}`; b.appendChild(cap);
+          b.onclick = () => { player.pause(); player.seek(it.t); q('.d-player').scrollIntoView({ behavior: 'smooth', block: 'center' }); };
+          box.appendChild(b);
+        });
+      }
     } else q('.d-player').innerHTML = '<p class="small">Este análisis se hizo con una versión anterior y no guarda la secuencia del movimiento.</p>';
     const ta = q('.d-notes'); ta.value = a.notes || a.interpretation;
     ta.addEventListener('change', async () => { a.notes = ta.value; await S.put('analyses', a); toast('Valoración guardada'); });
@@ -844,6 +862,7 @@
     $('#an-run').onclick = runFile;
     $('#an-cancel').onclick = () => state.abort && state.abort.abort();
     $('#cam-start').onclick = startCamera; $('#cam-rec').onclick = toggleRecording; $('#cam-stop').onclick = () => { stopCamera(); $('#an-status').textContent = 'Cámara detenida.'; };
+    $('#an-treadmill').addEventListener('change', (e) => { $('#tm-speed').hidden = !e.target.checked; });
     $('#btn-sample').onclick = runSample;
     $('#wl-sample').onclick = () => { closeWelcome(); runSample(); };
     $('#wl-explore').onclick = () => { closeWelcome(); location.hash = '#pacientes'; };

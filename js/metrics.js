@@ -375,6 +375,14 @@
       else { if (cur && cur.end - cur.start >= fs) segs.push(cur); cur = dir ? { dir, start: i, end: i } : null; }
     }
     if (cur && cur.end - cur.start >= fs) segs.push(cur);
+    // Marcha en cinta: la pelvis apenas se desplaza, pero los pies se alternan por delante y por detrás de ella
+    let treadmill = false;
+    const tSpeed = isNum(meta.treadmillSpeed) && meta.treadmillSpeed > 0 ? meta.treadmillSpeed : null; // m/s
+    if (!segs.length || tSpeed) {
+      const sep = D.t.map((_, i) => { const a = P(D, 27, i), b = P(D, 28, i); return a && b ? Math.abs(a.x - b.x) / bl : null; });
+      const pelvRange = (percentile(pelvX, 0.95) - percentile(pelvX, 0.05)) / bl;
+      if (tSpeed || ((percentile(sep, 0.9) || 0) > 0.12 && pelvRange < 0.6)) { treadmill = true; segs.length = 0; segs.push({ dir: footDirection(D), start: 0, end: D.n - 1 }); }
+    }
     const dirArr = new Array(D.n).fill(0); for (const s of segs) for (let i = s.start; i <= s.end; i++) dirArr[i] = s.dir;
     const fallbackDir = Math.sign(median(v.filter((x) => isNum(x) && Math.abs(x) > vThr)) || footDirection(D)) || 1;
     const dirFill = dirArr.map((d) => d || fallbackDir);
@@ -414,7 +422,10 @@
           if (to != null && toO != null && to > hsO[0]) st.ds = (100 * ((toO - a) + (to - hsO[0]))) / (b - a);
           if (scale && isNum(valAt(pelvX, b)) && isNum(valAt(pelvX, hsO[0]))) st.stepLen = Math.abs(valAt(pelvX, b) - valAt(pelvX, hsO[0])) * scale;
         }
-        if (scale && isNum(valAt(pelvX, a)) && isNum(valAt(pelvX, b))) { st.strideLen = Math.abs(valAt(pelvX, b) - valAt(pelvX, a)) * scale; st.speed = st.strideLen / T; }
+        if (treadmill) {
+          // En cinta la pelvis no avanza: longitudes a partir de la velocidad de la cinta introducida
+          if (tSpeed) { st.speed = tSpeed; st.strideLen = tSpeed * T; delete st.stepLen; if (st.step != null) st.stepLen = tSpeed * st.step; }
+        } else if (scale && isNum(valAt(pelvX, a)) && isNum(valAt(pelvX, b))) { st.strideLen = Math.abs(valAt(pelvX, b) - valAt(pelvX, a)) * scale; st.speed = st.strideLen / T; }
         const kn = sampleBetween(knee[s], a, b, 51), hp = sampleBetween(hip[s], a, b, 51);
         if (kn.filter(isNum).length >= 46) {
           const seg = (p0, p1) => kn.slice(Math.round(p0 / 2), Math.round(p1 / 2) + 1).filter(isNum);
@@ -448,10 +459,11 @@
     const G1 = 'Espaciotemporales', G2 = 'Simetría y variabilidad', G3 = 'Cinemática sagital';
     const metrics = [];
     const speedArr = pick(all, 'speed');
-    if (scale) metrics.push(mk('speed', 'Velocidad de marcha', speedArr, 'm/s', { group: G1, rel: relCount(speedArr.length), ref: sNorm ? { lo: round(sNorm * 0.85, 2), text: `≥ ${fx(sNorm * 0.85, 2)} m/s (media ${fx(sNorm, 2)} para edad${pt.sex ? ' y sexo' : ''} − 15 %)`, src: 'bohannon11' } : { lo: 1.0, text: '≥ 1,00 m/s', src: 'fritz' } }));
+    if (treadmill && tSpeed) metrics.push(mk('speed', 'Velocidad de la cinta (introducida)', null, 'm/s', { group: G1, value: tSpeed, n: null, rel: 'alta' }));
+    else if (scale && !treadmill) metrics.push(mk('speed', 'Velocidad de marcha', speedArr, 'm/s', { group: G1, rel: relCount(speedArr.length), ref: sNorm ? { lo: round(sNorm * 0.85, 2), text: `≥ ${fx(sNorm * 0.85, 2)} m/s (media ${fx(sNorm, 2)} para edad${pt.sex ? ' y sexo' : ''} − 15 %)`, src: 'bohannon11' } : { lo: 1.0, text: '≥ 1,00 m/s', src: 'fritz' } }));
     const cadArr = all.map((x) => 120 / x.T);
     metrics.push(mk('cadence', 'Cadencia', cadArr, 'pasos/min', { group: G1, rel: relCount(all.length), ref: { lo: 95, hi: 125, text: '95–125', src: 'winter' } }));
-    if (scale) metrics.push(mk('strideLen', 'Longitud de zancada', pick(all, 'strideLen'), 'm', { group: G1, rel: relCount(all.length), ref: isNum(pt.heightCm) ? { lo: round((pt.heightCm / 100) * 0.72, 2), hi: round((pt.heightCm / 100) * 0.92, 2), text: '0,72–0,92 × talla', src: 'winter' } : null }));
+    if ((scale && !treadmill) || (treadmill && tSpeed)) metrics.push(mk('strideLen', 'Longitud de zancada', pick(all, 'strideLen'), 'm', { group: G1, rel: relCount(all.length), ref: isNum(pt.heightCm) ? { lo: round((pt.heightCm / 100) * 0.72, 2), hi: round((pt.heightCm / 100) * 0.92, 2), text: '0,72–0,92 × talla', src: 'winter' } : null }));
     metrics.push(mk('strideTime', 'Duración de la zancada', pick(all, 'T'), 's', { group: G1, rel: relCount(all.length), ref: { lo: 0.95, hi: 1.25, text: '0,95–1,25 s', src: 'winter' } }));
     // El despegue estimado con pose 2D tiende a retrasarse algún fotograma: fiabilidad máxima «media»
     for (const s of ['L', 'R']) metrics.push(mk('stance' + s, `Fase de apoyo ${s === 'L' ? 'izq.' : 'der.'}`, pick(strides[s], 'stance'), '%', { group: G1, rel: lower(relCount(pick(strides[s], 'stance').length), 'media'), ref: { lo: 57, hi: 64, text: '57–64 %', src: 'perry' } }));
@@ -460,7 +472,7 @@
     metrics.push(mk('strideCV', 'Variabilidad de la zancada (CV)', null, '%', { group: G2, value: all.length >= 3 ? cv(pick(all, 'T')) : null, n: all.length, rel: all.length >= 10 ? 'alta' : all.length >= 6 ? 'media' : 'baja', ref: { hi: 3, text: '< 3 %', src: 'hausdorff' } }));
     metrics.push(mk('siStep', 'Asimetría del tiempo de paso (IS)', null, '%', { group: G2, value: robinsonSI(mean(pick(strides.L, 'step')), mean(pick(strides.R, 'step'))), n: minSide, rel: relCount(minSide), ref: { hi: 10, text: '< 10 %', src: 'robinson' } }));
     metrics.push(mk('siStance', 'Asimetría de la fase de apoyo (IS)', null, '%', { group: G2, value: robinsonSI(mean(pick(strides.L, 'stance')), mean(pick(strides.R, 'stance'))), n: minSide, rel: relCount(minSide), ref: { hi: 10, text: '< 10 %', src: 'robinson' } }));
-    if (scale) metrics.push(mk('siLen', 'Asimetría de la longitud de paso (IS)', null, '%', { group: G2, value: robinsonSI(mean(pick(strides.L, 'stepLen')), mean(pick(strides.R, 'stepLen'))), n: minSide, rel: relCount(minSide), ref: { hi: 10, text: '< 10 %', src: 'robinson' } }));
+    if ((scale && !treadmill) || (treadmill && tSpeed)) metrics.push(mk('siLen', 'Asimetría de la longitud de paso (IS)', null, '%', { group: G2, value: robinsonSI(mean(pick(strides.L, 'stepLen')), mean(pick(strides.R, 'stepLen'))), n: minSide, rel: relCount(minSide), ref: { hi: 10, text: '< 10 %', src: 'robinson' } }));
     metrics.push(mk('siKnee', 'Asimetría de la flexión de rodilla en oscilación (IS)', null, '%', { group: G2, value: robinsonSI(mean(pick(strides.L, 'kneeSwing')), mean(pick(strides.R, 'kneeSwing'))), n: minSide, rel: relKin === 'alta' ? relCount(minSide) : 'baja', ref: { hi: 10, text: '< 10 %', src: 'robinson' } }));
     for (const s of ['L', 'R']) {
       const sl = s === 'L' ? 'izq.' : 'der.', st = strides[s].filter((x) => x.knee);
@@ -479,10 +491,11 @@
     const flags = [];
     if (all.length < 2) flags.push(view.label === 'lateral' ? 'Se han detectado menos de 2 zancadas completas. Graba más pasos (8–15 s cruzando la imagen).' : 'No se han podido detectar zancadas: la marcha necesita vista lateral, caminando de lado a lado de la imagen.');
     for (const x of outOfRange(metrics)) flags.push(fmtFlag(x));
-    if (isNum(mean(speedArr)) && mean(speedArr) < 1.0 && speedArr.length >= 2) flags.push('Velocidad < 1,0 m/s: asociada a mayor riesgo de caídas y peor pronóstico funcional (Fritz y Lusardi, 2009).');
+    if (treadmill) flags.unshift(tSpeed ? 'Marcha en cinta: la velocidad es la de la cinta (introducida); las longitudes se calculan a partir de ella.' : 'Marcha en cinta detectada: indica la velocidad de la cinta para obtener longitudes de paso y zancada.');
+    if (!treadmill && isNum(mean(speedArr)) && mean(speedArr) < 1.0 && speedArr.length >= 2) flags.push('Velocidad < 1,0 m/s: asociada a mayor riesgo de caídas y peor pronóstico funcional (Fritz y Lusardi, 2009).');
 
     const kneeSwingBoth = [...pick(strides.L, 'kneeSwing'), ...pick(strides.R, 'kneeSwing')];
-    const main = scale && speedArr.length
+    const main = !treadmill && scale && speedArr.length
       ? { key: 'speed', label: 'Velocidad de marcha', value: round(mean(speedArr), 2), unit: 'm/s', higherIsBetter: true, sd: round(sd(speedArr), 2) }
       : { key: 'kneeSwing', label: 'Flexión máx. de rodilla en oscilación', value: round(mean(kneeSwingBoth), 0), unit: '°', higherIsBetter: true, sd: round(sd(kneeSwingBoth), 0) };
     const samples = {
@@ -496,13 +509,13 @@
     return {
       metrics, main, flags, samples, cycles,
       events: { hsL: ev.L.hs.map(tt), hsR: ev.R.hs.map(tt), toL: ev.L.to.map(tt), toR: ev.R.to.map(tt) },
-      counts: { strides: all.length, stridesL: strides.L.length, stridesR: strides.R.length, segments: segs.length },
+      counts: { strides: all.length, stridesL: strides.L.length, stridesR: strides.R.length, segments: segs.length, treadmill },
       series: { kneeL: knee.L, kneeR: knee.R, hipL: hip.L, hipR: hip.R, trunk },
       methods: [
         'Eventos de la marcha por el método de coordenadas de Zeni et al. (2008): contacto inicial = máxima posición anterior del talón respecto a la pelvis; despegue = mínima posición del antepié. Solo se usan tramos de marcha en una dirección (se excluyen giros y paradas).',
         'Ángulos normalizados al 0–100 % del ciclo (51 puntos) y promediados por lado. La desviación respecto a la curva de referencia se expresa como Gait Variable Score (raíz del error cuadrático medio; Baker et al., 2009).',
         'Simetría mediante el índice de Robinson et al. (1987): IS = |D − I| / (0,5·(D + I)) × 100. Variabilidad como coeficiente de variación de la duración de la zancada (Hausdorff, 2005).',
-        scale ? 'Escala espacial a partir de la talla: distancia hombro–tobillo ≈ 0,779 × talla (Drillis y Contini, 1966). Supone cámara fija y perpendicular a la dirección de la marcha.' : 'Sin talla del paciente: no se calculan velocidad ni longitudes.',
+        treadmill ? `Marcha en cinta: la pelvis no avanza, así que se analiza todo el registro con la orientación de los pies${tSpeed ? ` y las longitudes se obtienen de la velocidad de la cinta (${String(tSpeed).replace('.', ',')} m/s)` : ''}.` : scale ? 'Escala espacial a partir de la talla: distancia hombro–tobillo ≈ 0,779 × talla (Drillis y Contini, 1966). Supone cámara fija y perpendicular a la dirección de la marcha.' : 'Sin talla del paciente: no se calculan velocidad ni longitudes.',
       ],
       refs: ['zeni', 'baker', 'robinson', 'hausdorff', 'perry', 'winter', 'kadaba', ...(scale ? ['bohannon11', 'fritz', 'drillis'] : [])],
     };

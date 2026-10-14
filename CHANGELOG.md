@@ -1,5 +1,11 @@
 # Historial de cambios
 
+## 3.2.0 · Marcha en cinta y fases del ciclo
+
+- **Marcha en cinta:** se detecta automáticamente cuando la pelvis no avanza pero los pies se alternan; con la velocidad de la cinta (km/h) se calculan las longitudes de paso y zancada. Nueva prueba con el simulador.
+- **Tira de fases:** el esqueleto en el contacto inicial, la respuesta a la carga, el apoyo medio, el despegue y la oscilación media (o las fases de una repetición de sentadilla o de silla). En la app, cada fase lleva el reproductor a ese instante; también aparece en el informe PDF.
+- **Prueba de la app completa en CI:** GitHub Actions abre la web en Chromium, analiza el vídeo real de ejemplo con MediaPipe, comprueba zancadas, velocidad y cadencia, revisa el reproductor, la tira de fases y el comparador, y genera el PDF.
+
 ## 3.1.0 · Calidad verificable y documentación
 
 - **Calidad del código:** ESLint, pruebas con el ejecutor estándar de Node (`node --test`) y una cobertura del 98,6 % de las líneas del motor. GitHub Actions ejecuta en cada cambio el estilo, las pruebas, la cobertura, la verificación y el ejemplo de Node.

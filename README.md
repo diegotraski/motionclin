@@ -56,12 +56,17 @@ Los tres pacientes de la demo son ficticios. Su movimiento lo genera un simulado
 | | |
 |---|---|
 | **Analizar** | Vídeo del móvil o cámara en directo. El esqueleto y los ángulos se ven mientras se procesa. |
-| **Revisar** | Reproductor sincronizado con cámara lenta, avance fotograma a fotograma, ángulos en vivo y línea de tiempo de las fases de la marcha. Al pulsar en la gráfica, el vídeo salta a ese instante. |
+| **Marcha en cinta** | Detecta automáticamente la marcha en tapiz rodante; con la velocidad de la cinta calcula longitudes de paso y zancada. |
+| **Revisar** | Reproductor sincronizado con cámara lenta, avance fotograma a fotograma, ángulos en vivo y línea de tiempo de las fases de la marcha. Al pulsar en la gráfica, el vídeo salta a ese instante. Tira de fases del ciclo (contacto inicial, respuesta a la carga, apoyo medio, despegue, oscilación) en la app y en el PDF. |
 | **Comparar** | Dos sesiones lado a lado con el movimiento sincronizado, las curvas superpuestas sobre la banda normal y la estadística del cambio. |
 | **Seguir** | Evolución con barras de error y tendencia semanal con su p. |
 | **Informar** | PDF con tabla de referencias, fiabilidad, gráficas, comparación, método y bibliografía. |
 | **Exportar** | CSV con series filtradas, eventos y ciclos para análisis propios; copia de seguridad en JSON. |
 | **Trabajar sin conexión** | Se instala como app; el modelo de visión queda guardado en el dispositivo. |
+
+<div align="center">
+<img src="docs/img/fases.png" alt="Tira de fases de la marcha: contacto inicial, respuesta a la carga, apoyo medio, despegue y oscilación media, con el ángulo de cada rodilla" width="88%">
+</div>
 
 ### Pruebas clínicas
 
@@ -97,10 +102,10 @@ La verificación demuestra que el procesado recupera los valores verdaderos cuan
 
 | | |
 |---|---|
-| Pruebas | 18 pruebas con valores conocidos (`npm test`), verificación con simulador (`npm run validate`) y prueba extremo a extremo en Chromium con un vídeo real |
+| Pruebas | 19 pruebas con valores conocidos (`npm test`), verificación con simulador (`npm run validate`) y prueba extremo a extremo en Chromium con un vídeo real |
 | Cobertura | 98,6 % de las líneas del motor (`npm run coverage`) |
 | Estilo | ESLint (`npm run lint`) |
-| Integración continua | GitHub Actions en cada cambio: estilo, pruebas, cobertura, verificación y ejemplo de Node |
+| Integración continua | GitHub Actions en cada cambio: estilo, pruebas, cobertura, verificación, ejemplo de Node y **la app completa en Chromium** (analiza el vídeo real con MediaPipe, genera el PDF y abre el comparador; `npm run e2e`) |
 | Diseño | Motor de análisis puro, sin DOM: se usa igual en el navegador, en las pruebas y [desde scripts](examples/analizar-desde-node.js) |
 
 ```mermaid

@@ -77,6 +77,17 @@ test('Primer fotograma con piernas intercambiadas: no arrastra el error', () => 
   near(get(r, 'kneeSwingL'), g.truth.kneeSwingL, 4, 'rodilla izq.');
 });
 
+test('Marcha en cinta: detecta ciclos sin desplazamiento y usa la velocidad introducida', () => {
+  const g = S.gait({ treadmill: true, cadence: 104, dur: 9, seed: 51 });
+  const r0 = M.analyze('gait', g.frames, g.meta);
+  assert.ok(r0.counts.treadmill, 'cinta detectada');
+  near(get(r0, 'cadence'), 104, 3, 'cadencia');
+  assert.strictEqual(get(r0, 'speed'), undefined, 'sin velocidad de cinta no se inventa la velocidad');
+  const r1 = M.analyze('gait', g.frames, Object.assign({}, g.meta, { treadmillSpeed: 1.1 }));
+  near(get(r1, 'strideLen'), 1.1 * (120 / 104), 0.05, 'longitud de zancada = velocidad × duración');
+  near(get(r1, 'kneeSwingL'), g.truth.kneeSwingL, 5, 'rodilla');
+});
+
 test('Cámara con fotogramas irregulares (remuestreo)', () => {
   const g = S.gait({ fps: 60, dur: 7, seed: 14 });
   const jitter = g.frames.filter((_, i) => i % 2 === 0 || i % 7 === 3).map((f, i) => ({ t: f.t + (i % 3) * 0.004, lm: f.lm }));

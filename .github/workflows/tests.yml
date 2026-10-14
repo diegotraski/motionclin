@@ -31,3 +31,23 @@ jobs:
           grep -E 'file|metrics.js|synth.js|replay.js|all files' cobertura.txt >> "$GITHUB_STEP_SUMMARY" || true
           echo '```' >> "$GITHUB_STEP_SUMMARY"
           cat validacion.md >> "$GITHUB_STEP_SUMMARY"
+
+  app:
+    name: App completa en Chromium (vídeo real)
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+      - name: Instalar dependencias y Chromium
+        run: |
+          npm install --no-audit --no-fund
+          npx playwright install --with-deps chromium
+      - name: Analizar el vídeo de ejemplo, revisar, comparar y generar el PDF
+        run: npm run e2e | tee e2e.txt
+      - name: Resumen
+        run: |
+          echo '## App completa en Chromium' >> "$GITHUB_STEP_SUMMARY"
+          cat e2e.txt >> "$GITHUB_STEP_SUMMARY"
