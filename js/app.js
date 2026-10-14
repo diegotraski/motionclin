@@ -64,9 +64,10 @@
     [state.patients, state.analyses] = await Promise.all([S.all('patients'), S.all('analyses')]);
     state.clinic = await S.setting('clinic', { name: 'Clínica Motion Fisio', physio: '', contact: '', logo: null });
     const seeded = await S.setting('seeded', false);
-    const oldDemo = state.analyses.some((a) => a.demo && (a.version !== 2 || !a.replay) && a.patientId !== 'sample-p');
+    const DEMO_VERSION = 3, dv = await S.setting('demoVersion', 0);
+    const oldDemo = state.analyses.some((a) => a.demo && a.patientId !== 'sample-p') && dv !== DEMO_VERSION;
     if (oldDemo) await clearDemo(true);
-    if ((!seeded && !state.patients.length) || oldDemo) { await loadDemo(); await S.setSetting('seeded', true); }
+    if ((!seeded && !state.patients.length) || oldDemo) { await loadDemo(); await S.setSetting('seeded', true); await S.setSetting('demoVersion', DEMO_VERSION); }
   }
   async function loadDemo() {
     const { patients, analyses } = window.MCDemo.build();
@@ -876,7 +877,7 @@
     $('#st-logo-prev').addEventListener('click', async (e) => { if (e.target.id === 'st-logo-del') { state.clinic.logo = null; await S.setSetting('clinic', state.clinic); render.ajustes(); } });
     $('#st-export').onclick = exportBackup;
     $('#st-import').addEventListener('change', (e) => e.target.files[0] && importBackup(e.target.files[0]));
-    $('#st-demo').onclick = async () => { await clearDemo(true); await loadDemo(); toast('Datos de ejemplo cargados'); render.ajustes(); };
+    $('#st-demo').onclick = async () => { await clearDemo(true); await loadDemo(); await S.setSetting('demoVersion', 3); toast('Datos de ejemplo cargados'); render.ajustes(); };
     $('#st-wipe').onclick = () => ($('#st-wipe-confirm').hidden = false);
     $('#st-wipe-no').onclick = () => ($('#st-wipe-confirm').hidden = true);
     $('#st-wipe-yes').onclick = async () => {
@@ -887,10 +888,16 @@
     let rt; window.addEventListener('resize', () => { clearTimeout(rt); rt = setTimeout(() => { const h = (location.hash || '#panel').slice(1); if (h === 'panel' || h === '') drawProgress(); }, 200); });
   }
 
+  // El navegador congela las pestañas ocultas: avisar si se cambia de pestaña durante un análisis
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden && state.abort) $('#an-status').textContent = 'Análisis en pausa: el navegador detiene el vídeo en pestañas ocultas. Vuelve a esta pestaña para continuar.';
+  });
+
   window.MCApp = { state, route };
 
   (async function init() {
     bind();
+    $('#kpis').innerHTML = '<div class="card kpi" style="grid-column:1/-1"><div class="label">Preparando</div><div class="sub">Generando los pacientes de ejemplo y sus análisis con el motor (solo la primera vez)…</div></div>';
     try { await load(); } catch (e) { console.error(e); toast('No se han podido cargar los datos guardados: ' + e.message, true); }
     route();
     if (!(await S.setting('welcomed', false)) && !navigator.webdriver) openWelcome();

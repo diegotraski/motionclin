@@ -169,8 +169,9 @@
         const up = lift && o.mono === s ? 0.09 * hp : 0;
         const ax = cx + sg * (PR.hipW / 2) * hp;
         const idx = s === 'L' ? [23, 25, 27, 29, 31] : [24, 26, 28, 30, 32];
-        lm[idx[0]] = [hipC[0] + sg * (PR.hipW / 2) * hp, hipC[1], 0, 0.97];
-        lm[idx[1]] = [(hipC[0] + ax) / 2 + sg * (PR.hipW / 4) * hp * 0, (hipC[1] + ay - up) / 2, 0, 0.97];
+        const hjx = hipC[0] + sg * (PR.hipW / 2) * hp;
+        lm[idx[0]] = [hjx, hipC[1], 0, 0.97];
+        lm[idx[1]] = [(hjx + ax) / 2, (hipC[1] + ay - up) / 2, 0, 0.97];
         lm[idx[2]] = [ax, ay - up, 0, 0.97];
         lm[idx[3]] = [ax, ay - up + PR.ankleH * hp, 0, 0.9]; lm[idx[4]] = [ax + sg * 0.01 * hp, ay - up + PR.ankleH * hp * 1.3, 0, 0.9];
       }
