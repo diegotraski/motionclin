@@ -9,12 +9,12 @@ module.exports = [
     files: ['js/**/*.js', 'sw.js'],
     languageOptions: {
       ecmaVersion: 2022, sourceType: 'script',
-      globals: { ...globals.browser, ...globals.serviceworker, module: 'readonly', Buffer: 'readonly', globalThis: 'readonly' },
+      globals: { ...globals.browser, ...globals.serviceworker, module: 'readonly', require: 'readonly', Buffer: 'readonly', globalThis: 'readonly' },
     },
     rules: { 'no-unused-vars': ['error', { args: 'none', caughtErrors: 'none' }], 'no-empty': ['error', { allowEmptyCatch: true }] },
   },
   {
-    files: ['tests/**/*.js', 'examples/**/*.js', 'eslint.config.js'],
+    files: ['tests/**/*.js', 'examples/**/*.js', 'validacion/**/*.js', 'eslint.config.js'],
     languageOptions: { ecmaVersion: 2022, sourceType: 'commonjs', globals: { ...globals.node, ...globals.browser } },
     rules: { 'no-unused-vars': ['error', { args: 'none', caughtErrors: 'none' }] },
   },

@@ -1,5 +1,13 @@
 # Historial de cambios
 
+## 3.3.0 · Datos de laboratorio y validación
+
+- **Referencias de laboratorio emparejadas por velocidad:** la curva de rodilla, la banda del muslo, la cadencia, la fase de apoyo y el doble apoyo se comparan con los datos de captura 3D de Bovi et al. (2011), 235 personas sanas, eligiendo el grupo de edad (jóvenes o adultos) y la clase de velocidad del paciente. Rango normal = media ± 2 DE. Con el vídeo real de ejemplo, el apoyo y el doble apoyo dejan de salir fuera de rango por comparar con una velocidad distinta.
+- **Análisis de concordancia con un laboratorio** (`validacion/`, `npm run concordancia`): Bland-Altman con sesgo proporcional, ICC(2,1) e ICC(3,1) con IC 95 % por *bootstrap*, RMSE y CMC de curvas, error de eventos en ms, SEM y MDC95. El ICC reproduce el ejemplo clásico de Shrout y Fleiss (1979).
+- **Protocolo de validación clínica** listo para un laboratorio de marcha: diseño, tamaño muestral, montaje y sincronización, variables, criterios de aceptación definidos de antemano, ética y RGPD.
+- **Informe de concordancia de ejemplo** con 24 sujetos simulados (sesgo de pose en la rodilla y error de medida del laboratorio), para enseñar el formato y cómo leer el sesgo frente al ICC.
+- 23 pruebas.
+
 ## 3.2.0 · Marcha en cinta y fases del ciclo
 
 - **Marcha en cinta:** se detecta automáticamente cuando la pelvis no avanza pero los pies se alternan; con la velocidad de la cinta (km/h) se calculan las longitudes de paso y zancada. Nueva prueba con el simulador.

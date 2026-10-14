@@ -84,7 +84,7 @@ Los tres pacientes de la demo son ficticios. Su movimiento lo genera un simulado
 
 ## Rigor científico
 
-La cadena completa (remuestreo, corrección de intercambios izquierda/derecha, limpieza, filtro Butterworth de fase cero, eventos, ciclos, escala y estadística) está descrita con sus fórmulas en **[docs/METODO.md](docs/METODO.md)**, con 18 referencias.
+La cadena completa (remuestreo, corrección de intercambios izquierda/derecha, limpieza, filtro Butterworth de fase cero, eventos, ciclos, escala y estadística) está descrita con sus fórmulas en **[docs/METODO.md](docs/METODO.md)**, con 25 referencias.
 
 **Verificación** con 30 sujetos simulados por prueba ([tabla completa](VALIDACION.md)):
 
@@ -96,13 +96,17 @@ La cadena completa (remuestreo, corrección de intercambios izquierda/derecha, l
 | Sentadilla · profundidad | 0,23° | 0,51° |
 | Silla ×5 · tiempo por repetición | 0,004 s | 0,009 s |
 
-La verificación demuestra que el procesado recupera los valores verdaderos cuando la pose es conocida. El error propio del modelo de pose frente a un laboratorio 3D es de varios grados, y medirlo requeriría un estudio de validación clínica.
+La verificación demuestra que el procesado recupera los valores verdaderos cuando la pose es conocida. El error propio del modelo de pose frente a un laboratorio 3D es de varios grados.
+
+**Referencias de laboratorio emparejadas por velocidad.** La curva de rodilla, la banda del muslo, la cadencia y las fases de apoyo se comparan con los datos normativos de captura 3D de [Bovi et al. (2011)](docs/METODO.md#7-valores-de-referencia): 235 personas sanas, separadas en jóvenes y adultos y en cinco velocidades. MotionClin elige automáticamente el grupo de edad y la velocidad del paciente, porque una rodilla de 50° es normal caminando despacio y no lo es a velocidad rápida.
+
+**Preparado para validarse frente a un laboratorio.** [`validacion/`](validacion/README.md) incluye el análisis de concordancia (Bland-Altman, ICC con IC por *bootstrap*, RMSE y CMC de curvas, error de eventos en ms, SEM y MDC95), el formato de datos y un protocolo de estudio con tamaño muestral, montaje, sincronización y criterios de aceptación fijados de antemano. Con un laboratorio basta un comando: `npm run concordancia -- datos.json`. [Informe de ejemplo con sujetos simulados](validacion/demo-informe.md).
 
 ## Calidad del software
 
 | | |
 |---|---|
-| Pruebas | 19 pruebas con valores conocidos (`npm test`), verificación con simulador (`npm run validate`) y prueba extremo a extremo en Chromium con un vídeo real |
+| Pruebas | 23 pruebas con valores conocidos (`npm test`), verificación con simulador (`npm run validate`) y prueba extremo a extremo en Chromium con un vídeo real |
 | Cobertura | 98,6 % de las líneas del motor (`npm run coverage`) |
 | Estilo | ESLint (`npm run lint`) |
 | Integración continua | GitHub Actions en cada cambio: estilo, pruebas, cobertura, verificación, ejemplo de Node y **la app completa en Chromium** (analiza el vídeo real con MediaPipe, genera el PDF y abre el comparador; `npm run e2e`) |
@@ -159,6 +163,8 @@ npm run example     # usar el motor desde Node con un vídeo real
 index.html  ·  css/app.css  ·  sw.js  ·  manifest.webmanifest
 js/
   metrics.js    motor: señal, eventos, métricas, referencias, estadística   (sin DOM)
+  norms.js      datos normativos de laboratorio (Bovi et al., 2011)          (sin DOM)
+  agreement.js  concordancia: Bland-Altman, ICC, CMC, MDC                    (sin DOM)
   synth.js      simulador de movimiento con valores conocidos                (sin DOM)
   replay.js     secuencia de pose comprimida a 16 bits                       (sin DOM)
   pose.js       MediaPipe: vídeo fotograma a fotograma y cámara
@@ -169,6 +175,7 @@ js/
   demo.js       pacientes de ejemplo
   app.js        vistas y navegación
 tests/          pruebas, verificación y prueba extremo a extremo
+validacion/     análisis de concordancia con un laboratorio y protocolo del estudio
 examples/       informes PDF, datos de un análisis real y uso del motor desde Node
 docs/           método, arquitectura e imágenes
 samples/        vídeo real de ejemplo (Sports2D, BSD-3)
@@ -181,7 +188,7 @@ Es una medida en 2D: los ángulos fuera del plano de la cámara se deforman, por
 
 ## Siguientes pasos
 
-- Validación frente a un sistema de captura 3D o una plataforma de presiones para cuantificar el error del modelo de pose.
+- Ejecutar el [protocolo de validación](validacion/README.md) con un laboratorio de marcha (captura 3D o pasarela instrumentada) para cuantificar el error del modelo de pose con personas.
 - Calibración con un objeto de tamaño conocido como alternativa a la talla.
 - Sincronización opcional y cifrada entre dispositivos de la misma clínica.
 

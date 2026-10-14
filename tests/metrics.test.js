@@ -171,3 +171,45 @@ test('Sin persona → error claro', () => {
   assert.throws(() => M.analyze('gait', Array.from({ length: 50 }, (_, i) => ({ t: i / 10, lm: null })), { width: 1, height: 1 }), /No se ha detectado/);
 });
 
+
+// ---------- referencias de laboratorio (Bovi et al., 2011) ----------
+test('Referencias de laboratorio: grupo por edad y clase por velocidad normalizada por la talla', () => {
+  const N = require('../js/norms.js');
+  assert.strictEqual(N.select(12).group, 'Young');
+  assert.strictEqual(N.select(40).cls, 'Natural', 'sin velocidad → velocidad libre');
+  assert.strictEqual(N.select(40, 0.75, 170).cls, 'XS');
+  assert.strictEqual(N.select(40, 1.5, 170).cls, 'M');
+  assert.strictEqual(N.select(40, 2.0, 170).cls, 'L');
+  const k = N.select(40).data.knee;
+  assert.strictEqual(k.mean.length, 51); assert.ok(Math.max(...k.mean) > 55 && Math.max(...k.mean) < 70, 'pico de oscilación plausible');
+});
+test('Vídeo real: con la referencia ajustada a la velocidad, apoyo y doble apoyo quedan en rango', () => {
+  const R = require('../examples/datos/marcha-lateral.landmarks.json');
+  const r = M.analyze('gait', R.frames, Object.assign({}, R.meta, { patient: { heightCm: 165, age: 30, sex: 'F' } }));
+  assert.ok(r.reference && r.reference.source === 'bovi', 'referencia de laboratorio');
+  for (const k of ['stanceR', 'ds']) assert.strictEqual(r.metrics.find((m) => m.key === k).eval, 'normal', k);
+});
+
+// ---------- concordancia con un laboratorio (js/agreement.js) ----------
+test('ICC: reproduce el ejemplo clásico de Shrout y Fleiss (1979)', () => {
+  const A = require('../js/agreement.js');
+  const Y = [[9, 2, 5, 8], [6, 1, 3, 2], [8, 4, 6, 8], [7, 1, 2, 6], [10, 5, 6, 9], [6, 2, 4, 7]];
+  near(A.icc21(Y), 0.29, 0.01, 'ICC(2,1)');
+  near(A.icc31(Y), 0.71, 0.01, 'ICC(3,1)');
+});
+test('Bland-Altman, ICC con bootstrap, CMC, eventos y MDC', () => {
+  const A = require('../js/agreement.js');
+  const truth = Array.from({ length: 30 }, (_, i) => 50 + (i % 10) * 2 + Math.floor(i / 10));
+  const est = truth.map((v, i) => v + 2 + ((i * 7) % 5 - 2) * 0.5); // sesgo de +2 con error pequeño
+  const ba = A.blandAltman(truth, est);
+  near(ba.bias, 2, 0.2, 'sesgo'); assert.ok(ba.loaHigh - ba.loaLow < 5);
+  const ic = A.icc(truth, est, { boot: 300 });
+  assert.ok(ic.icc31 > 0.9 && ic.icc21 < ic.icc31, 'el sesgo sistemático baja el acuerdo absoluto, no la consistencia');
+  assert.ok(ic.ci21[0] < ic.icc21 && ic.ci21[1] > ic.icc21);
+  const c = Array.from({ length: 51 }, (_, k) => 30 * Math.sin((k / 50) * Math.PI * 2) + 30);
+  near(A.cmc([c, c]), 1, 1e-9, 'CMC curvas idénticas');
+  assert.ok(A.cmc([c, c.map((v) => v + 5)]) < A.cmc([c, c.map((v) => v + 1)]), 'más desplazamiento → menor CMC');
+  const ev = A.eventErrors([1, 2, 3], [1.02, 2.01, 3.5]);
+  assert.strictEqual(ev.n, 2); assert.strictEqual(ev.missed, 1); near(ev.mae, 15, 0.01, 'ms');
+  const m = A.mdc([10, 12, 11, 13, 12], [11, 12, 10, 14, 12]); assert.ok(m.mdc95 > m.sem);
+});

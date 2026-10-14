@@ -301,6 +301,8 @@
   // Forma basada en Winter (2009) y Kadaba et al. (1990). DE típica ≈ 6°.
   const NORM_KNEE = [5, 12, 17, 19, 17, 13, 9, 6, 5, 7, 11, 21, 37, 52, 60, 62, 56, 42, 24, 9, 5];
   const NORM_SD = 6;
+  // Datos normativos de laboratorio (Bovi et al., 2011); si no están disponibles se usa la curva aproximada
+  const NORMS = typeof module !== 'undefined' && module.exports ? require('./norms.js') : root.MCNorms;
   const normKnee = (n = 51) => Array.from({ length: n }, (_, k) => { const x = (k / (n - 1)) * 20, lo = Math.floor(x), hi = Math.min(20, lo + 1); return NORM_KNEE[lo] + (NORM_KNEE[hi] - NORM_KNEE[lo]) * (x - lo); });
   // Velocidad de marcha confortable por edad y sexo (m/s), Bohannon y Williams Andrews (2011)
   const SPEED_NORM = { M: [[20, 1.36], [30, 1.43], [40, 1.43], [50, 1.43], [60, 1.34], [70, 1.26], [80, 0.97]], F: [[20, 1.34], [30, 1.34], [40, 1.39], [50, 1.31], [60, 1.24], [70, 1.13], [80, 0.94]] };
@@ -334,6 +336,7 @@
     buatois: 'Buatois S, Miljkovic D, Manckoundia P, et al. Five times sit to stand test is a predictor of recurrent falls in healthy community-living subjects aged 65 and older. J Am Geriatr Soc. 2008;56(8):1575-7.',
     springer: 'Springer BA, Marin R, Cyhan T, Roberts H, Gill NW. Normative values for the unipedal stance test with eyes open and closed. J Geriatr Phys Ther. 2007;30(1):8-15.',
     winter95: 'Winter DA. Human balance and posture control during standing and walking. Gait Posture. 1995;3(4):193-214.',
+    bovi: 'Bovi G, Rabuffetti M, Mazzoleni P, Ferrarin M. A multiple-task gait analysis approach: kinematic, kinetic and EMG reference data for healthy young and adult subjects. Gait Posture. 2011;33(1):6-13.',
     perera: 'Perera S, Mody SH, Woodman RC, Studenski SA. Meaningful change and responsiveness in common physical performance measures in older adults. J Am Geriatr Soc. 2006;54(5):743-9.',
     welch: 'Welch BL. The generalization of "Student\'s" problem when several different population variances are involved. Biometrika. 1947;34(1-2):28-35.',
   };
@@ -445,10 +448,24 @@
       cycles['hip' + s] = agg(strides[s].map((x) => x.hip).filter(Boolean));
       const to = pick(strides[s], 'stance'); cycles['toe' + s] = to.length ? round(mean(to), 1) : null;
     }
-    const norm = normKnee(51);
+    const pt = meta.patient || {};
+    // Referencia de laboratorio elegida por edad y por la velocidad del paciente normalizada por su talla
+    const speedForRef = treadmill ? tSpeed : scale ? mean(pick(all, 'speed')) : null;
+    const nref = NORMS ? NORMS.select(pt.age, speedForRef, pt.heightCm) : null;
+    const RK = nref ? nref.data.knee : { mean: normKnee(51), sd: new Array(51).fill(NORM_SD) };
+    const norm = RK.mean;
+    const argmax = (a, b) => { let i0 = a; for (let k = a; k <= b; k++) if (RK.mean[k] > RK.mean[i0]) i0 = k; return i0; };
+    const band = (m0, sd0) => ({ lo: round(m0 - 2 * sd0), hi: round(m0 + 2 * sd0) });
+    const refTxt = (b, unit) => `${b.lo}–${b.hi}${unit}${nref ? ' (laboratorio)' : ''}`;
+    const kSw = band(RK.mean[argmax(25, 50)], RK.sd[argmax(25, 50)]), kLR = band(RK.mean[argmax(0, 12)], RK.sd[argmax(0, 12)]), kIC = band(RK.mean[0], RK.sd[0]);
+    const nd = nref ? nref.data : null;
+    const stB = nd ? band(nd.footOff[0], nd.footOff[1]) : { lo: 57, hi: 64 }, dsB = nd ? band(nd.ds[0], nd.ds[1]) : { lo: 16, hi: 26 };
+    const cadB = nd ? band(nd.cadence[0], nd.cadence[1]) : { lo: 95, hi: 125 };
+    const th = nd ? nd.thigh : null, thRom = th ? Math.max(...th.mean) - Math.min(...th.mean) : null, thSd = th ? mean(th.sd) : null;
+    const hipB = th ? band(thRom, thSd) : { lo: 35, hi: 50 };
+    const SRC = nref ? 'bovi' : 'perry';
     const gvs = (s) => (cycles['knee' + s] ? Math.sqrt(mean(cycles['knee' + s].mean.map((v2, k) => (isNum(v2) ? (v2 - norm[k]) ** 2 : null)))) : null);
 
-    const pt = meta.patient || {};
     const sNorm = speedNorm(pt.age, pt.sex);
     const relKin = view.label === 'lateral' ? 'alta' : view.label === 'oblicua' ? 'media' : 'baja';
     const relCount = (n) => (n >= 4 ? (relKin === 'baja' ? 'baja' : 'alta') : n >= 2 ? 'media' : 'baja');
@@ -462,12 +479,12 @@
     if (treadmill && tSpeed) metrics.push(mk('speed', 'Velocidad de la cinta (introducida)', null, 'm/s', { group: G1, value: tSpeed, n: null, rel: 'alta' }));
     else if (scale && !treadmill) metrics.push(mk('speed', 'Velocidad de marcha', speedArr, 'm/s', { group: G1, rel: relCount(speedArr.length), ref: sNorm ? { lo: round(sNorm * 0.85, 2), text: `≥ ${fx(sNorm * 0.85, 2)} m/s (media ${fx(sNorm, 2)} para edad${pt.sex ? ' y sexo' : ''} − 15 %)`, src: 'bohannon11' } : { lo: 1.0, text: '≥ 1,00 m/s', src: 'fritz' } }));
     const cadArr = all.map((x) => 120 / x.T);
-    metrics.push(mk('cadence', 'Cadencia', cadArr, 'pasos/min', { group: G1, rel: relCount(all.length), ref: { lo: 95, hi: 125, text: '95–125', src: 'winter' } }));
+    metrics.push(mk('cadence', 'Cadencia', cadArr, 'pasos/min', { group: G1, rel: relCount(all.length), ref: { lo: cadB.lo, hi: cadB.hi, text: refTxt(cadB, ''), src: nref ? 'bovi' : 'winter' } }));
     if ((scale && !treadmill) || (treadmill && tSpeed)) metrics.push(mk('strideLen', 'Longitud de zancada', pick(all, 'strideLen'), 'm', { group: G1, rel: relCount(all.length), ref: isNum(pt.heightCm) ? { lo: round((pt.heightCm / 100) * 0.72, 2), hi: round((pt.heightCm / 100) * 0.92, 2), text: '0,72–0,92 × talla', src: 'winter' } : null }));
     metrics.push(mk('strideTime', 'Duración de la zancada', pick(all, 'T'), 's', { group: G1, rel: relCount(all.length), ref: { lo: 0.95, hi: 1.25, text: '0,95–1,25 s', src: 'winter' } }));
     // El despegue estimado con pose 2D tiende a retrasarse algún fotograma: fiabilidad máxima «media»
-    for (const s of ['L', 'R']) metrics.push(mk('stance' + s, `Fase de apoyo ${s === 'L' ? 'izq.' : 'der.'}`, pick(strides[s], 'stance'), '%', { group: G1, rel: lower(relCount(pick(strides[s], 'stance').length), 'media'), ref: { lo: 57, hi: 64, text: '57–64 %', src: 'perry' } }));
-    metrics.push(mk('ds', 'Doble apoyo', pick(all, 'ds'), '%', { group: G1, rel: lower(relCount(pick(all, 'ds').length), 'media'), ref: { lo: 16, hi: 26, text: '16–26 %', src: 'perry' } }));
+    for (const s of ['L', 'R']) metrics.push(mk('stance' + s, `Fase de apoyo ${s === 'L' ? 'izq.' : 'der.'}`, pick(strides[s], 'stance'), '%', { group: G1, rel: lower(relCount(pick(strides[s], 'stance').length), 'media'), ref: { lo: stB.lo, hi: stB.hi, text: refTxt(stB, ' %'), src: SRC } }));
+    metrics.push(mk('ds', 'Doble apoyo', pick(all, 'ds'), '%', { group: G1, rel: lower(relCount(pick(all, 'ds').length), 'media'), ref: { lo: dsB.lo, hi: dsB.hi, text: refTxt(dsB, ' %'), src: SRC } }));
     const minSide = Math.min(strides.L.length, strides.R.length);
     metrics.push(mk('strideCV', 'Variabilidad de la zancada (CV)', null, '%', { group: G2, value: all.length >= 3 ? cv(pick(all, 'T')) : null, n: all.length, rel: all.length >= 10 ? 'alta' : all.length >= 6 ? 'media' : 'baja', ref: { hi: 3, text: '< 3 %', src: 'hausdorff' } }));
     metrics.push(mk('siStep', 'Asimetría del tiempo de paso (IS)', null, '%', { group: G2, value: robinsonSI(mean(pick(strides.L, 'step')), mean(pick(strides.R, 'step'))), n: minSide, rel: relCount(minSide), ref: { hi: 10, text: '< 10 %', src: 'robinson' } }));
@@ -477,13 +494,13 @@
     for (const s of ['L', 'R']) {
       const sl = s === 'L' ? 'izq.' : 'der.', st = strides[s].filter((x) => x.knee);
       const rk = lower(st.length >= 4 ? relKin : st.length >= 2 ? lower(relKin, 'media') : 'baja', sideVis[s] >= 0.8 ? 'alta' : sideVis[s] >= 0.6 ? 'media' : 'baja');
-      metrics.push(mk('kneeSwing' + s, `Rodilla ${sl}: flexión máx. en oscilación`, pick(st, 'kneeSwing'), '°', { group: G3, rel: rk, ref: { lo: 55, hi: 70, text: '55–70°', src: 'perry' } }));
-      metrics.push(mk('kneeLR' + s, `Rodilla ${sl}: flexión en respuesta a la carga`, pick(st, 'kneeLR'), '°', { group: G3, rel: rk, ref: { lo: 10, hi: 25, text: '10–25°', src: 'perry' } }));
-      metrics.push(mk('kneeIC' + s, `Rodilla ${sl}: flexión en el contacto inicial`, pick(st, 'kneeIC'), '°', { group: G3, rel: rk, ref: { lo: 0, hi: 10, text: '0–10°', src: 'perry' } }));
+      metrics.push(mk('kneeSwing' + s, `Rodilla ${sl}: flexión máx. en oscilación`, pick(st, 'kneeSwing'), '°', { group: G3, rel: rk, ref: { lo: kSw.lo, hi: kSw.hi, text: refTxt(kSw, '°'), src: SRC } }));
+      metrics.push(mk('kneeLR' + s, `Rodilla ${sl}: flexión en respuesta a la carga`, pick(st, 'kneeLR'), '°', { group: G3, rel: rk, ref: { lo: kLR.lo, hi: kLR.hi, text: refTxt(kLR, '°'), src: SRC } }));
+      metrics.push(mk('kneeIC' + s, `Rodilla ${sl}: flexión en el contacto inicial`, pick(st, 'kneeIC'), '°', { group: G3, rel: rk, ref: { lo: kIC.lo, hi: kIC.hi, text: refTxt(kIC, '°'), src: SRC } }));
       metrics.push(mk('gvs' + s, `Rodilla ${sl}: desviación de la curva normal (GVS)`, null, '°', { group: G3, value: gvs(s), n: cycles['knee' + s] ? cycles['knee' + s].n : 0, rel: rk, ref: { hi: 8, text: '< 8° (orientativo)', src: 'baker' } }));
       const nh = strides[s].filter((x) => x.hip).length;
       const rh = lower(nh >= 4 ? relKin : nh >= 2 ? lower(relKin, 'media') : 'baja', sideVis[s] >= 0.8 ? 'alta' : sideVis[s] >= 0.6 ? 'media' : 'baja');
-      metrics.push(mk('hipROM' + s, `Cadera ${sl}: rango sagital`, pick(strides[s].filter((x) => x.hip), 'hipROM'), '°', { group: G3, rel: rh, ref: { lo: 35, hi: 50, text: '35–50°', src: 'perry' } }));
+      metrics.push(mk('hipROM' + s, `Cadera ${sl}: rango sagital`, pick(strides[s].filter((x) => x.hip), 'hipROM'), '°', { group: G3, rel: rh, ref: { lo: hipB.lo, hi: hipB.hi, text: refTxt(hipB, '°') + (th ? ', orientativo' : ''), src: SRC } }));
     }
     const trunkWalk = trunk.filter((x, i) => dirArr[i]);
     metrics.push(mk('trunk', 'Inclinación del tronco (media)', null, '°', { group: G3, value: mean(trunkWalk.length ? trunkWalk : trunk), n: null, rel: relKin }));
@@ -508,16 +525,18 @@
     const tt = (i) => round(i / fs, 3);
     return {
       metrics, main, flags, samples, cycles,
+      reference: nref ? { source: 'bovi', label: nref.label, group: nref.group, cls: nref.cls, speedBH: round(nref.speedBH, 1), knee: RK, thigh: nref.data.thigh } : null,
       events: { hsL: ev.L.hs.map(tt), hsR: ev.R.hs.map(tt), toL: ev.L.to.map(tt), toR: ev.R.to.map(tt) },
       counts: { strides: all.length, stridesL: strides.L.length, stridesR: strides.R.length, segments: segs.length, treadmill },
       series: { kneeL: knee.L, kneeR: knee.R, hipL: hip.L, hipR: hip.R, trunk },
       methods: [
         'Eventos de la marcha por el método de coordenadas de Zeni et al. (2008): contacto inicial = máxima posición anterior del talón respecto a la pelvis; despegue = mínima posición del antepié. Solo se usan tramos de marcha en una dirección (se excluyen giros y paradas).',
         'Ángulos normalizados al 0–100 % del ciclo (51 puntos) y promediados por lado. La desviación respecto a la curva de referencia se expresa como Gait Variable Score (raíz del error cuadrático medio; Baker et al., 2009).',
+        nref ? `Referencias de laboratorio de Bovi et al. (2011), ${nref.label}${nref.speedBH ? `, elegidas por la velocidad del paciente normalizada por su talla (${round(nref.speedBH)} % de la talla por segundo)` : ''}: curva de rodilla y de muslo, despegue, doble apoyo y cadencia (rango = media ± 2 DE). La cinemática depende de la velocidad, así que comparar con sujetos que caminan a una velocidad parecida evita confundir caminar despacio con una alteración.` : 'Curva de referencia aproximada a partir de Winter (2009) y Kadaba et al. (1990).',
         'Simetría mediante el índice de Robinson et al. (1987): IS = |D − I| / (0,5·(D + I)) × 100. Variabilidad como coeficiente de variación de la duración de la zancada (Hausdorff, 2005).',
         treadmill ? `Marcha en cinta: la pelvis no avanza, así que se analiza todo el registro con la orientación de los pies${tSpeed ? ` y las longitudes se obtienen de la velocidad de la cinta (${String(tSpeed).replace('.', ',')} m/s)` : ''}.` : scale ? 'Escala espacial a partir de la talla: distancia hombro–tobillo ≈ 0,779 × talla (Drillis y Contini, 1966). Supone cámara fija y perpendicular a la dirección de la marcha.' : 'Sin talla del paciente: no se calculan velocidad ni longitudes.',
       ],
-      refs: ['zeni', 'baker', 'robinson', 'hausdorff', 'perry', 'winter', 'kadaba', ...(scale ? ['bohannon11', 'fritz', 'drillis'] : [])],
+      refs: [...(nref ? ['bovi'] : []), 'zeni', 'baker', 'robinson', 'hausdorff', 'perry', 'winter', 'kadaba', ...(scale ? ['bohannon11', 'fritz', 'drillis'] : [])],
     };
   }
 
@@ -791,7 +810,7 @@
     const out = outOfRange(res.metrics);
     return {
       version: 2, type, view: view.label, viewRatio: view.ratio, fs: round(D.fs, 1), fc: FC[type],
-      quality: q, metrics: res.metrics, main: res.main, flags: res.flags, info: res.notes || [], samples: res.samples, cycles: res.cycles || null,
+      quality: q, metrics: res.metrics, main: res.main, flags: res.flags, reference: res.reference || null, info: res.notes || [], samples: res.samples, cycles: res.cycles || null,
       events: res.events, counts: res.counts, reps: res.reps || null,
       status: out.length || res.flags.length ? 'review' : 'ok',
       interpretation: interpretation(type, res, q),

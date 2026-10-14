@@ -152,21 +152,25 @@
   function mainChartSpec(a, th, colors) {
     const C = colors || { L: css('--cyan'), R: css('--amber'), band: 'rgba(143,165,191,.18)', blue: css('--blue') };
     if (a.type === 'gait' && a.cycles && (a.cycles.kneeL || a.cycles.kneeR)) {
-      const norm = MM.normKnee(51), xs = norm.map((_, k) => k * 2);
-      const series = [{ name: 'Referencia ± 1 DE', color: C.band.replace(/[\d.]+\)$/, '0.9)'), width: 1, dash: [4, 4], data: xs.map((x, k) => [x, norm[k]]), band: xs.map((x, k) => [x, norm[k] - MM.NORM_SD, norm[k] + MM.NORM_SD]), bandColor: C.band }];
+      const rk = refKnee(a), norm = rk.mean, xs = norm.map((_, k) => k * 2);
+      const series = [{ name: 'Referencia ± 1 DE', color: C.band.replace(/[\d.]+\)$/, '0.9)'), width: 1, dash: [4, 4], data: xs.map((x, k) => [x, norm[k]]), band: xs.map((x, k) => [x, norm[k] - rk.sd[k], norm[k] + rk.sd[k]]), bandColor: C.band }];
       for (const s of ['L', 'R']) { const c = a.cycles['knee' + s]; if (c) series.push({ name: `Rodilla ${s === 'L' ? 'izq.' : 'der.'} (n=${c.n})`, color: C[s], width: 2.2, data: xs.map((x, k) => [x, c.mean[k]]) }); }
       const vlines = ['L', 'R'].filter((s) => a.cycles['toe' + s] != null).map((s) => ({ x: a.cycles['toe' + s], color: C[s], label: 'despegue' }));
-      return { title: 'Flexión de rodilla en el ciclo de marcha (grados)', note: 'Media de todos los ciclos por lado frente a la curva de referencia (Winter, 2009; Kadaba et al., 1990). Líneas verticales: despegue medio.', opts: { series, vlines, yUnit: '°', xFormat: (x) => x + '%', xTicks: [0, 20, 40, 60, 80, 100], yMin: -5 } };
+      return { title: 'Flexión de rodilla en el ciclo de marcha (grados)', note: `Media de todos los ciclos por lado frente a la referencia de laboratorio ${a.reference ? `de Bovi et al. (2011): ${a.reference.label}` : '(Winter, 2009; Kadaba et al., 1990)'}. Líneas verticales: despegue medio.`, opts: { series, vlines, yUnit: '°', xFormat: (x) => x + '%', xTicks: [0, 20, 40, 60, 80, 100], yMin: -5 } };
     }
     const t = a.series.t;
     if (a.type === 'balance' && a.series.sway) return { title: 'Oscilación angular del cuerpo (grados)', note: 'Ángulo de la recta tobillos–hombros respecto a su media.', opts: { series: [{ name: 'Oscilación', color: C.blue, data: t.map((x, i) => [x, a.series.sway[i]]) }], yUnit: '°', xFormat: (x) => x + 's' } };
     if (a.type === 'sts' && a.series.pelvis) return { title: 'Altura de la pelvis (0 % sentado, 100 % de pie)', note: 'Líneas discontinuas: bipedestación alcanzada en cada repetición.', opts: { series: [{ name: 'Pelvis', color: C.blue, data: t.map((x, i) => [x, a.series.pelvis[i]]) }], yUnit: '%', xFormat: (x) => x + 's', markers: (a.events && a.events.reps) || [] } };
     return { title: 'Flexión de rodilla en el tiempo (grados)', note: 'Líneas discontinuas: punto más bajo de cada repetición.', opts: { series: [{ name: 'Rodilla izq.', color: C.L, data: t.map((x, i) => [x, a.series.kneeL[i]]) }, { name: 'Rodilla der.', color: C.R, data: t.map((x, i) => [x, a.series.kneeR[i]]) }], yUnit: '°', xFormat: (x) => x + 's', markers: (a.events && (a.events.reps || [])) || [] } };
   }
+  // Curva de referencia de la rodilla: la de laboratorio guardada en el análisis o la aproximada
+  function refKnee(a) { return a && a.reference && a.reference.knee ? a.reference.knee : { mean: MM.normKnee(51), sd: new Array(51).fill(MM.NORM_SD) }; }
   function secondChartSpec(a, colors) {
     const C = colors || { L: css('--cyan'), R: css('--amber') };
     if (a.type === 'gait' && a.cycles && (a.cycles.hipL || a.cycles.hipR)) {
       const xs = Array.from({ length: 51 }, (_, k) => k * 2), series = [];
+      const th = a.reference && a.reference.thigh;
+      if (th) series.push({ name: 'Muslo, laboratorio ± 1 DE', legend: true, color: 'rgba(143,165,191,.9)', width: 1, dash: [4, 4], data: xs.map((x, k) => [x, th.mean[k]]), band: xs.map((x, k) => [x, th.mean[k] - th.sd[k], th.mean[k] + th.sd[k]]), bandColor: 'rgba(143,165,191,.16)' });
       for (const s of ['L', 'R']) { const c = a.cycles['hip' + s]; if (c) series.push({ name: `Cadera ${s === 'L' ? 'izq.' : 'der.'}`, color: C[s], width: 2, data: xs.map((x, k) => [x, c.mean[k]]), band: xs.map((x, k) => [x, c.mean[k] - c.sd[k], c.mean[k] + c.sd[k]]), bandColor: C[s].startsWith('#') ? C[s] + '22' : 'rgba(143,165,191,.12)' }); }
       return { title: 'Flexión de cadera en el ciclo (± 1 DE entre ciclos)', opts: { series, yUnit: '°', xFormat: (x) => x + '%', xTicks: [0, 20, 40, 60, 80, 100] } };
     }
@@ -741,7 +745,7 @@
     const colors = { L: css('--cyan'), R: css('--amber') };
     let specC;
     if (A.type === 'gait' && A.cycles && B.cycles) {
-      const norm = MM.normKnee(51), xs = norm.map((_, k) => k * 2), series = [{ name: 'Referencia ± 1 DE', color: 'rgba(143,165,191,.9)', width: 1, dash: [2, 3], legend: false, data: xs.map((x, k) => [x, norm[k]]), band: xs.map((x, k) => [x, norm[k] - MM.NORM_SD, norm[k] + MM.NORM_SD]), bandColor: 'rgba(143,165,191,.15)' }];
+      const rk = refKnee(B), norm = rk.mean, xs = norm.map((_, k) => k * 2), series = [{ name: 'Referencia ± 1 DE', color: 'rgba(143,165,191,.9)', width: 1, dash: [2, 3], legend: false, data: xs.map((x, k) => [x, norm[k]]), band: xs.map((x, k) => [x, norm[k] - rk.sd[k], norm[k] + rk.sd[k]]), bandColor: 'rgba(143,165,191,.15)' }];
       for (const s2 of ['L', 'R']) {
         if (A.cycles['knee' + s2]) series.push({ name: `A ${s2 === 'L' ? 'izq.' : 'der.'}`, color: colors[s2], width: 1.6, dash: [6, 4], data: xs.map((x, k) => [x, A.cycles['knee' + s2].mean[k]]) });
         if (B.cycles['knee' + s2]) series.push({ name: `B ${s2 === 'L' ? 'izq.' : 'der.'}`, color: colors[s2], width: 2.6, data: xs.map((x, k) => [x, B.cycles['knee' + s2].mean[k]]) });

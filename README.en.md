@@ -63,7 +63,7 @@ Clinical tests: **gait** (lateral view), **squat** (lateral or frontal), **five-
 
 ## Scientific approach
 
-The pipeline is: uniform resampling → left/right swap correction by temporal continuity → visibility and segment-length cleaning → zero-phase Butterworth low-pass filter with Winter's correction → events, cycles, spatial scaling from body height → per-cycle statistics. Every step, with formulas and 18 references, is in [docs/METODO.md](docs/METODO.md) (Spanish).
+The pipeline is: uniform resampling → left/right swap correction by temporal continuity → visibility and segment-length cleaning → zero-phase Butterworth low-pass filter with Winter's correction → events, cycles, spatial scaling from body height → per-cycle statistics. Every step, with formulas and 25 references, is in [docs/METODO.md](docs/METODO.md) (Spanish).
 
 Verification on 30 simulated subjects per test ([full table](VALIDACION.md)):
 
@@ -75,14 +75,18 @@ Verification on 30 simulated subjects per test ([full table](VALIDACION.md)):
 | Squat · depth | 0.23° | 0.51° |
 | Sit-to-stand · time per repetition | 0.004 s | 0.009 s |
 
-This verifies the processing when the pose is known. The pose model's own error against a 3D lab system is several degrees, and measuring it would require a clinical validation study.
+This verifies the processing when the pose is known. The pose model's own error against a 3D lab system is several degrees.
+
+**Speed-matched laboratory references.** Knee curve, thigh band, cadence and stance phases are compared with the 3D motion-capture normative data of Bovi et al. (2011): 235 healthy people, split into young/adult and five walking speeds. MotionClin picks the patient's age group and speed class automatically, because 50° of knee flexion is normal when walking slowly but not when walking fast.
+
+**Ready for a lab validation.** [`validacion/`](validacion/README.md) (Spanish) contains the agreement analysis (Bland–Altman, ICC with bootstrap CIs, curve RMSE and CMC, event timing error in ms, SEM and MDC95), the data format and a study protocol with sample size, setup, synchronisation and pre-specified acceptance criteria. Running it on lab data is one command: `npm run concordancia -- data.json`. See the [example report on simulated subjects](validacion/demo-informe.md).
 
 ## Engineering
 
 - **No backend, no build step.** Plain HTML, CSS and JavaScript, deployed as-is on GitHub Pages. Patient video is processed on-device (privacy by design).
 - **Pure analysis engine.** `js/metrics.js` has no DOM dependency: the same code runs in the browser, in the tests and [from Node scripts](examples/analizar-desde-node.js).
 - **Pose sequence storage.** Each analysis stores the pose compressed to 16 bits (~70 kB per 10 s, < 0.1 px error), so old sessions can be replayed and compared without keeping the video.
-- **Testing.** 18 unit tests with known values, a simulator-based verification suite, an end-to-end test in Chromium with real video, ESLint, and 98.6 % line coverage of the engine. GitHub Actions runs everything on every push.
+- **Testing.** 23 unit tests with known values, a simulator-based verification suite, an end-to-end test in Chromium with real video, ESLint, and 98.6 % line coverage of the engine. GitHub Actions runs everything on every push.
 
 Design decisions and rejected alternatives: [docs/ARQUITECTURA.md](docs/ARQUITECTURA.md) (Spanish).
 

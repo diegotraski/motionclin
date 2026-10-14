@@ -31,4 +31,8 @@ Clip de 4,6 s de una persona caminando en vista lateral (exterior, cámara de m�
 - 3 zancadas completas detectadas (1 izquierda, 2 derechas) con el método de Zeni.
 - Velocidad 1,26 ± 0,03 m/s (con una talla supuesta de 165 cm), cadencia 98 ± 1 pasos/min, duración de zancada 1,22 ± 0,01 s: valores dentro de lo esperable para marcha a ritmo cómodo.
 - Curvas de rodilla por ciclo con la forma típica (pico de respuesta a la carga ≈ 20–25° y pico de oscilación ≈ 50–66°).
-- Fase de apoyo y doble apoyo salen algo altos (65 % y 31 %): con pose 2D el despegue tiende a detectarse con algún fotograma de retraso, por eso esas variables tienen fiabilidad máxima «media».
+- Fase de apoyo y doble apoyo de 65 % y 31 %: frente a un rango fijo de marcha rápida parecían altos, pero con la referencia de laboratorio de su velocidad (Bovi et al., 2011, adultos a velocidad lenta: 60–67 % y 20–32 %) quedan dentro. Aun así tienen fiabilidad máxima «media», porque con pose 2D el despegue tiende a detectarse con algún fotograma de retraso.
+
+## Siguiente paso: concordancia con un laboratorio
+
+Esta verificación no mide el error del modelo de pose. Para eso está preparado [`validacion/`](validacion/README.md): análisis de concordancia (Bland-Altman, ICC, CMC, MDC95), formato de datos y protocolo del estudio.

@@ -117,12 +117,31 @@ Así se evita llamar «mejora» a diferencias estadísticamente significativas p
 
 ## 7. Valores de referencia
 
+### Marcha: datos de laboratorio emparejados por velocidad
+
+La curva de rodilla, la banda del muslo, la cadencia, la fase de apoyo y el doble apoyo se comparan con los **datos normativos de laboratorio de Bovi et al. (2011)**: captura óptica 3D de 111 jóvenes (6–17 años) y 124 adultos (22–72 años) sanos, con medias y DE cada 2 % del ciclo. Los autores los publicaron como material suplementario del artículo.
+
+Como la cinemática de la marcha cambia mucho con la velocidad (más lento = menos flexión de rodilla y más doble apoyo), MotionClin elige el subconjunto que corresponde al paciente:
+
+1. **Grupo** por edad: jóvenes si < 18 años, adultos en otro caso.
+2. **Clase de velocidad** con la velocidad normalizada por la talla, $v_{BH} = 100 \cdot v / h$ (% de la altura por segundo), la clase cuya media está más cerca:
+
+| Clase (adultos) | $v_{BH}$ (%/s) | Cadencia (pasos/min) | Despegue (% ciclo) | Doble apoyo (%) |
+|---|---|---|---|---|
+| Muy lenta (XS) | 49 ± 7 | 88 ± 11 | 66,2 ± 2,2 | 30,9 ± 3,8 |
+| Lenta (S) | 70 ± 6 | 110 ± 7 | 63,3 ± 1,8 | 25,6 ± 3,0 |
+| Media (M) | 87 ± 6 | 123 ± 8 | 62,3 ± 2,5 | 23,9 ± 4,6 |
+| Rápida (L) | 115 ± 8 | 141 ± 11 | 59,6 ± 2,2 | 18,8 ± 4,0 |
+| Libre | 71 ± 10 | 110 ± 9 | 63,2 ± 2,0 | 25,3 ± 3,2 |
+
+Sin velocidad (sin talla y fuera de cinta) se usa la velocidad libre. El rango de normalidad de cada variable es **media ± 2 DE**. Así se evita marcar como anormal una rodilla de 50° en alguien que camina despacio, cuando eso es lo esperable a esa velocidad. Con el vídeo real de ejemplo, la fase de apoyo y el doble apoyo, que salían «altos» frente a un rango fijo, quedan dentro del rango de su velocidad.
+
+### Resto de variables
+
 | Variable | Referencia | Fuente |
 |---|---|---|
 | Velocidad de marcha | media por edad y sexo; alerta < 85 % de la media o < 1,0 m/s | Bohannon y Williams Andrews, 2011; Fritz y Lusardi, 2009 |
-| Cadencia | 95–125 pasos/min | Winter, 2009 |
-| Fase de apoyo / doble apoyo | 57–64 % / 16–26 % | Perry y Burnfield, 2010 |
-| Flexión de rodilla en oscilación | 55–70° | Perry y Burnfield, 2010 |
+| Cadencia, apoyo, doble apoyo, rodilla, muslo | media ± 2 DE de la clase de velocidad (ver arriba) | Bovi et al., 2011 |
 | Variabilidad de la zancada | CV < 3 % | Hausdorff, 2005 |
 | Asimetría | IS < 10 % | umbral habitual |
 | Levantarse de la silla ×5 | 11,4 / 12,6 / 14,8 s (60–69 / 70–79 / 80–89 años); > 15 s asociado a caídas | Bohannon, 2006; Buatois et al., 2008 |
@@ -130,31 +149,51 @@ Así se evita llamar «mejora» a diferencias estadísticamente significativas p
 | Valgo dinámico | −5 a 10° (orientativo) | Munro et al., 2012 |
 | Oscilación angular | sin norma validada para este método: solo seguimiento | — |
 
-## 8. Límites
+## 8. Concordancia con un laboratorio
+
+[`validacion/`](../validacion/README.md) contiene el análisis para comparar MotionClin con un sistema de referencia y el protocolo del estudio. Con $d_i = x_{MC,i} - x_{lab,i}$:
+
+- **Bland-Altman:** sesgo $\bar d$ con IC 95 % y límites de acuerdo $\bar d \pm 1{,}96\, s_d$; sesgo proporcional como pendiente de $d$ frente a la media de ambos métodos.
+- **ICC** a partir de los cuadrados medios del ANOVA sujetos × métodos ($MS_R$, $MS_C$, $MS_E$; $n$ sujetos, $k$ métodos):
+
+$$ICC(2,1) = \frac{MS_R - MS_E}{MS_R + (k-1)MS_E + \frac{k}{n}(MS_C - MS_E)}, \qquad ICC(3,1) = \frac{MS_R - MS_E}{MS_R + (k-1)MS_E}$$
+
+  con IC 95 % por *bootstrap* de sujetos (2000 remuestras) e interpretación de Koo y Li (2016) sobre el límite inferior. La implementación reproduce el ejemplo de Shrout y Fleiss (1979) en las pruebas.
+- **Curvas:** RMSE entre curvas medias del ciclo y coeficiente de correlación múltiple (Kadaba et al., 1989).
+- **Test-retest:** $SEM = s_d/\sqrt 2$ y $MDC_{95} = 1{,}96\sqrt 2 \cdot SEM$ (Weir, 2005).
+
+## 9. Límites
 
 - **2D.** Los ángulos fuera del plano de la cámara se proyectan y se deforman; por eso cada prueba pide una vista concreta y la fiabilidad baja cuando la vista no es la adecuada.
 - **Puntos del modelo, no marcadores.** BlazePose estima posiciones de articulaciones a partir de la imagen; frente a sistemas optoelectrónicos 3D el error típico es de varios grados.
 - **Escala por talla.** Las distancias y la velocidad dependen de la talla introducida y de que la cámara esté perpendicular a la marcha.
-- **Referencias orientativas.** Proceden de poblaciones y métodos de laboratorio distintos; sirven para contextualizar, no para diagnosticar.
-- **Verificación, no validación.** [`VALIDACION.md`](../VALIDACION.md) demuestra que el procesado recupera los valores verdaderos cuando la pose es conocida. Cuantificar el error del modelo de pose requiere un estudio frente a un sistema de referencia.
+- **Referencias de laboratorio 3D.** Las de marcha son de captura óptica 3D y las de MotionClin son 2D: un sesgo de unos grados frente a ellas es esperable. Sirven para contextualizar, no para diagnosticar.
+- **Verificación, no validación.** [`VALIDACION.md`](../VALIDACION.md) demuestra que el procesado recupera los valores verdaderos cuando la pose es conocida. Cuantificar el error del modelo de pose requiere un estudio frente a un sistema de referencia, que está preparado en [`validacion/`](../validacion/README.md).
 
 ## Referencias
 
 1. Baker R, McGinley JL, Schwartz MH, et al. The Gait Profile Score and Movement Analysis Profile. *Gait Posture*. 2009;30(3):265-9.
 2. Bazarevsky V, Grishchenko I, Raveendran K, et al. BlazePose: On-device real-time body pose tracking. arXiv:2006.10204; 2020.
-3. Bohannon RW. Reference values for the five-repetition sit-to-stand test: a descriptive meta-analysis of data from elders. *Percept Mot Skills*. 2006;103(1):215-22.
+3. Bland JM, Altman DG. Statistical methods for assessing agreement between two methods of clinical measurement. *Lancet*. 1986;1(8476):307-10.
 4. Bohannon RW, Williams Andrews A. Normal walking speed: a descriptive meta-analysis. *Physiotherapy*. 2011;97(3):182-9.
-5. Buatois S, Miljkovic D, Manckoundia P, et al. Five times sit to stand test is a predictor of recurrent falls in healthy community-living subjects aged 65 and older. *J Am Geriatr Soc*. 2008;56(8):1575-7.
-6. Drillis R, Contini R. Body segment parameters. Technical Report 1166-03. New York University; 1966.
-7. Fritz S, Lusardi M. White paper: "Walking speed: the sixth vital sign". *J Geriatr Phys Ther*. 2009;32(2):46-9.
-8. Hausdorff JM. Gait variability: methods, modeling and meaning. *J Neuroeng Rehabil*. 2005;2:19.
-9. Kadaba MP, Ramakrishnan HK, Wootten ME. Measurement of lower extremity kinematics during level walking. *J Orthop Res*. 1990;8(3):383-92.
-10. Munro A, Herrington L, Carolan M. Reliability of 2-dimensional video assessment of frontal-plane dynamic knee valgus during common athletic screening tasks. *J Sport Rehabil*. 2012;21(1):7-11.
-11. Perera S, Mody SH, Woodman RC, Studenski SA. Meaningful change and responsiveness in common physical performance measures in older adults. *J Am Geriatr Soc*. 2006;54(5):743-9.
-12. Perry J, Burnfield JM. *Gait Analysis: Normal and Pathological Function*. 2.ª ed. Thorofare: SLACK; 2010.
-13. Robinson RO, Herzog W, Nigg BM. Use of force platform variables to quantify the effects of chiropractic manipulation on gait symmetry. *J Manipulative Physiol Ther*. 1987;10(4):172-6.
-14. Springer BA, Marin R, Cyhan T, Roberts H, Gill NW. Normative values for the unipedal stance test with eyes open and closed. *J Geriatr Phys Ther*. 2007;30(1):8-15.
-15. Welch BL. The generalization of "Student's" problem when several different population variances are involved. *Biometrika*. 1947;34(1-2):28-35.
-16. Winter DA. Human balance and posture control during standing and walking. *Gait Posture*. 1995;3(4):193-214.
-17. Winter DA. *Biomechanics and Motor Control of Human Movement*. 4.ª ed. Hoboken: Wiley; 2009.
-18. Zeni JA, Richards JG, Higginson JS. Two simple methods for determining gait events during treadmill and overground walking using kinematic data. *Gait Posture*. 2008;27(4):710-4.
+5. Bohannon RW. Reference values for the five-repetition sit-to-stand test: a descriptive meta-analysis of data from elders. *Percept Mot Skills*. 2006;103(1):215-22.
+6. Bovi G, Rabuffetti M, Mazzoleni P, Ferrarin M. A multiple-task gait analysis approach: kinematic, kinetic and EMG reference data for healthy young and adult subjects. *Gait Posture*. 2011;33(1):6-13.
+7. Buatois S, Miljkovic D, Manckoundia P, et al. Five times sit to stand test is a predictor of recurrent falls in healthy community-living subjects aged 65 and older. *J Am Geriatr Soc*. 2008;56(8):1575-7.
+8. Drillis R, Contini R. Body segment parameters. Technical Report 1166-03. New York University; 1966.
+9. Fritz S, Lusardi M. White paper: "Walking speed: the sixth vital sign". *J Geriatr Phys Ther*. 2009;32(2):46-9.
+10. Hausdorff JM. Gait variability: methods, modeling and meaning. *J Neuroeng Rehabil*. 2005;2:19.
+11. Kadaba MP, Ramakrishnan HK, Wootten ME, et al. Repeatability of kinematic, kinetic, and electromyographic data in normal adult gait. *J Orthop Res*. 1989;7(6):849-60.
+12. Kadaba MP, Ramakrishnan HK, Wootten ME. Measurement of lower extremity kinematics during level walking. *J Orthop Res*. 1990;8(3):383-92.
+13. Koo TK, Li MY. A guideline of selecting and reporting intraclass correlation coefficients for reliability research. *J Chiropr Med*. 2016;15(2):155-63.
+14. McGraw KO, Wong SP. Forming inferences about some intraclass correlation coefficients. *Psychol Methods*. 1996;1(1):30-46.
+15. Munro A, Herrington L, Carolan M. Reliability of 2-dimensional video assessment of frontal-plane dynamic knee valgus during common athletic screening tasks. *J Sport Rehabil*. 2012;21(1):7-11.
+16. Perera S, Mody SH, Woodman RC, Studenski SA. Meaningful change and responsiveness in common physical performance measures in older adults. *J Am Geriatr Soc*. 2006;54(5):743-9.
+17. Perry J, Burnfield JM. *Gait Analysis: Normal and Pathological Function*. 2.ª ed. Thorofare: SLACK; 2010.
+18. Robinson RO, Herzog W, Nigg BM. Use of force platform variables to quantify the effects of chiropractic manipulation on gait symmetry. *J Manipulative Physiol Ther*. 1987;10(4):172-6.
+19. Shrout PE, Fleiss JL. Intraclass correlations: uses in assessing rater reliability. *Psychol Bull*. 1979;86(2):420-8.
+20. Springer BA, Marin R, Cyhan T, Roberts H, Gill NW. Normative values for the unipedal stance test with eyes open and closed. *J Geriatr Phys Ther*. 2007;30(1):8-15.
+21. Weir JP. Quantifying test-retest reliability using the intraclass correlation coefficient and the SEM. *J Strength Cond Res*. 2005;19(1):231-40.
+22. Welch BL. The generalization of "Student's" problem when several different population variances are involved. *Biometrika*. 1947;34(1-2):28-35.
+23. Winter DA. *Biomechanics and Motor Control of Human Movement*. 4.ª ed. Hoboken: Wiley; 2009.
+24. Winter DA. Human balance and posture control during standing and walking. *Gait Posture*. 1995;3(4):193-214.
+25. Zeni JA, Richards JG, Higginson JS. Two simple methods for determining gait events during treadmill and overground walking using kinematic data. *Gait Posture*. 2008;27(4):710-4.
