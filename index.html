@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<!--MC:HEAD-START-->
+<title>MotionClin</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect width=%2232%22 height=%2232%22 rx=%228%22 fill=%22%2339a2ff%22/%3E%3Ctext x=%2216%22 y=%2221%22 font-size=%2213%22 font-family=%22Arial%22 font-weight=%22700%22 text-anchor=%22middle%22 fill=%22%2304121f%22%3EMC%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&family=Sora:wght@500;600;700&display=swap">
+<link rel="stylesheet" href="css/app.css">
+<!--MC:HEAD-END-->
+</head>
+<body>
+<div class="app">
+  <aside class="side">
+    <div class="brand"><div class="logo">MC</div><div><h1>MotionClin</h1><p>Análisis biomecánico por vídeo</p></div></div>
+    <nav class="nav" aria-label="Secciones">
+      <a href="#panel" data-view="panel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span>Panel</span></a>
+      <a href="#analisis" data-view="analisis"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10 5-3v10l-5-3"/></svg><span>Nuevo análisis</span></a>
+      <a href="#pacientes" data-view="pacientes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg><span>Pacientes</span></a>
+      <a href="#informe" data-view="informe"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5M8 13h8M8 17h5"/></svg><span>Informes</span></a>
+      <a href="#metodo" data-view="metodo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.8 3h10.4a2 2 0 0 0 1.8-3l-5-9V3"/><path d="M7.5 14h9"/></svg><span>Método</span></a>
+      <a href="#ajustes" data-view="ajustes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><span>Ajustes</span></a>
+    </nav>
+    <div class="privacy"><b>Privacidad por diseño</b>El vídeo se analiza en este navegador. No se sube a ningún servidor y los datos se guardan solo en este equipo.</div>
+  </aside>
+
+  <main class="main">
+    <!-- PANEL -->
+    <section id="v-panel" data-section="panel">
+      <div class="top">
+        <div><h2>Panel clínico</h2><p>Seguimiento objetivo de marcha, sentadilla y equilibrio por paciente.</p></div>
+        <div class="actions"><button class="btn" id="btn-csv">Exportar CSV</button><a class="btn primary" href="#analisis">+ Nuevo análisis</a></div>
+      </div>
+      <div class="banner" id="demo-banner" hidden><span><b>Datos de ejemplo.</b> Pacientes y sesiones ficticios para enseñar la herramienta. Tus análisis reales aparecerán junto a ellos.</span><button class="btn sm" id="btn-clear-demo">Borrar ejemplos</button></div>
+      <div class="grid g4" id="kpis"></div>
+      <div class="grid g3 mt">
+        <div class="card">
+          <h3><span>Evolución por sesión</span><select id="prog-patient" aria-label="Paciente" style="width:auto;max-width:55%"></select></h3>
+          <div class="chart-box" id="prog-chart"></div>
+          <div class="small" id="prog-caption"></div>
+        </div>
+        <div class="card" id="last-card"></div>
+      </div>
+      <div class="card mt">
+        <h3>Análisis recientes</h3>
+        <div class="table-wrap"><table id="recent-table"></table></div>
+      </div>
+    </section>
+
+    <!-- NUEVO ANÁLISIS -->
+    <section id="v-analisis" data-section="analisis" hidden>
+      <div class="top"><div><h2>Nuevo análisis de movimiento</h2><p>Sube un vídeo del paciente o usa la cámara. Se detectan 33 puntos corporales y se calculan las métricas.</p></div></div>
+      <div class="grid g2">
+        <div class="card form">
+          <div class="row">
+            <div class="field"><label for="an-patient">Paciente</label><select id="an-patient"></select></div>
+            <div class="field"><label for="an-precision">Precisión del modelo</label><select id="an-precision"><option value="1">Estándar (recomendada)</option><option value="0">Rápida</option></select></div>
+          </div>
+          <div class="field"><span class="lbl">Tipo de prueba</span>
+            <div class="chips" id="an-type" role="group" aria-label="Tipo de prueba">
+              <button class="chip" data-type="gait" aria-pressed="true">Marcha</button>
+              <button class="chip" data-type="squat" aria-pressed="false">Sentadilla</button>
+              <button class="chip" data-type="sts" aria-pressed="false">Levantarse ×5</button>
+              <button class="chip" data-type="balance" aria-pressed="false">Equilibrio</button>
+            </div>
+          </div>
+          <div class="field"><span class="lbl">Origen</span>
+            <div class="chips" id="an-source" role="group" aria-label="Origen del vídeo">
+              <button class="chip" data-src="file" aria-pressed="true">Subir vídeo</button>
+              <button class="chip" data-src="camera" aria-pressed="false">Cámara en directo</button>
+            </div>
+          </div>
+          <div id="src-file">
+            <label class="drop" id="drop" for="an-file">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 16V4m0 0-4 4m4-4 4 4M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>
+              <div id="drop-text"><div class="file">Arrastra el vídeo aquí o pulsa para elegirlo</div><p>MP4, WebM o MOV · cuerpo completo · 8–15 s</p></div>
+            </label>
+            <input type="file" id="an-file" accept="video/*" hidden>
+          </div>
+          <div id="src-camera" hidden>
+            <div class="actions">
+              <button class="btn" id="cam-start">Activar cámara</button>
+              <button class="btn primary" id="cam-rec" disabled>Grabar y analizar</button>
+              <button class="btn" id="cam-stop" disabled>Detener</button>
+            </div>
+            <p class="small" id="cam-note">La cámara funciona al abrir MotionClin desde su propia web (https). Si no está disponible, graba con el móvil y sube el vídeo.</p>
+          </div>
+          <div class="actions"><button class="btn primary" id="an-run" disabled style="flex:1">Analizar vídeo</button><button class="btn" id="an-cancel" hidden>Cancelar</button></div>
+        </div>
+        <div class="card"><h3 id="guide-title">Cómo grabar: marcha</h3><div class="guide" id="guide"></div></div>
+      </div>
+
+      <div class="card mt">
+        <h3><span>Esqueleto detectado</span><span class="small num"><span id="an-fps"></span> <span id="model-status" class="pill neutral">Modelo de visión: cargando…</span></span></h3>
+        <div class="stage"><canvas id="an-canvas"></canvas><div class="empty" id="stage-empty">Aquí verás el vídeo con los puntos articulares y los ángulos de rodilla mientras se analiza.</div><div class="badge" id="stage-badge" hidden></div></div>
+        <video id="cam-video" playsinline muted hidden></video>
+        <div class="progress" id="an-progress" hidden><i></i></div>
+        <div class="status-line" id="an-status"></div>
+      </div>
+
+      <div id="an-result" hidden>
+        <div class="card summary mt" id="res-summary"></div>
+        <div class="grid g2 mt">
+          <div class="card"><h3 id="res-chart-title">Curva</h3><div class="chart-box" id="res-chart"></div><div class="chart-box" id="res-chart2"></div><p class="small" id="res-chart-note"></p></div>
+          <div class="card" id="res-compare"></div>
+        </div>
+        <div class="card mt"><h3><span>Resultados</span><span class="small">media ± DE · n = ciclos, repeticiones o ventanas</span></h3><div class="table-wrap" id="res-table"></div></div>
+        <div class="grid g2e mt">
+          <div class="card"><h3>Alertas</h3><ul class="flags" id="res-flags"></ul></div>
+          <div class="card" id="res-quality"></div>
+        </div>
+        <div class="card mt" id="res-reps" hidden></div>
+        <details class="card mt method-box"><summary>Método y referencias de este análisis</summary><div id="res-methods"></div></details>
+        <div class="card mt form">
+          <div class="field"><label for="res-notes">Valoración profesional (se incluye en el informe; puedes editarla)</label><textarea id="res-notes"></textarea></div>
+          <div class="actions"><button class="btn primary" id="res-report">Ver informe y descargar PDF</button><a class="btn" href="#analisis" id="res-new">Analizar otro vídeo</a></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- PACIENTES -->
+    <section id="v-pacientes" data-section="pacientes" hidden>
+      <div class="top"><div><h2>Pacientes</h2><p>Histórico de sesiones y comparación de resultados.</p></div><div class="actions"><button class="btn primary" id="btn-add-patient">+ Añadir paciente</button></div></div>
+      <div class="card form" id="patient-form" hidden>
+        <h3 id="pf-title">Nuevo paciente</h3>
+        <div class="row">
+          <div class="field"><label for="pf-name">Nombre y apellidos</label><input type="text" id="pf-name" autocomplete="off"></div>
+          <div class="field"><label for="pf-birth">Año de nacimiento</label><input type="number" id="pf-birth" min="1900" max="2026"></div>
+          <div class="field"><label for="pf-height">Talla (cm)</label><input type="number" id="pf-height" min="50" max="230"></div>
+          <div class="field"><label for="pf-sex">Sexo</label><select id="pf-sex"><option value="">Sin indicar</option><option value="F">Mujer</option><option value="M">Hombre</option></select></div>
+        </div>
+        <p class="small" style="margin:-4px 0 0">La edad, la talla y el sexo se usan para escalar distancias y elegir los valores de referencia.</p>
+        <div class="field"><label for="pf-condition">Motivo de consulta / diagnóstico</label><input type="text" id="pf-condition" placeholder="p. ej. Rehabilitación de LCA"></div>
+        <div class="field"><label for="pf-notes">Notas</label><textarea id="pf-notes" style="min-height:70px"></textarea></div>
+        <div class="actions"><button class="btn primary" id="pf-save">Guardar paciente</button><button class="btn ghost" id="pf-cancel">Cancelar</button></div>
+      </div>
+      <div class="card mt" id="patient-list-card">
+        <input type="search" id="p-search" placeholder="Buscar paciente…" aria-label="Buscar paciente" style="max-width:320px;margin-bottom:10px">
+        <div class="table-wrap"><table id="patient-table"></table></div>
+      </div>
+      <div id="patient-detail" hidden></div>
+    </section>
+
+    <!-- INFORME -->
+    <section id="v-informe" data-section="informe" hidden>
+      <div class="top">
+        <div><h2>Informe PDF</h2><p>El documento que el fisioterapeuta entrega al paciente.</p></div>
+        <div class="actions"><select id="rep-select" aria-label="Análisis" style="width:auto;max-width:100%"></select><button class="btn primary" id="rep-download">Descargar PDF</button></div>
+      </div>
+      <div id="rep-preview"></div>
+    </section>
+
+    <!-- MÉTODO -->
+    <section id="v-metodo" data-section="metodo" hidden>
+      <div class="top"><div><h2>Método</h2><p>Cómo se obtiene cada número, con qué límites y en qué literatura se apoya.</p></div></div>
+      <div class="grid g2e">
+        <div class="card prose">
+          <h3>Cadena de procesado</h3>
+          <ol>
+            <li><b>Estimación de pose 2D.</b> MediaPipe BlazePose localiza 33 puntos anatómicos en cada fotograma, con una puntuación de visibilidad.</li>
+            <li><b>Remuestreo uniforme.</b> Los vídeos se muestrean a 30 Hz (marcha) o 20 Hz; la cámara en directo se remuestrea a una frecuencia constante.</li>
+            <li><b>Corrección izquierda/derecha.</b> Si las piernas cambian de etiqueta de un fotograma a otro, se corrige por continuidad con la trayectoria predicha.</li>
+            <li><b>Limpieza.</b> Se descartan puntos con visibilidad &lt; 0,5 y, en marcha, los que cambian la longitud del muslo o la pierna más de un 25 %. Huecos de hasta 0,25 s se interpolan.</li>
+            <li><b>Filtrado.</b> Butterworth paso bajo de 2º orden en doble pasada (fase cero). Corte de 6 Hz en marcha, 4 Hz en sentadilla y silla, 3 Hz en equilibrio, con la corrección de Winter para la doble pasada.</li>
+            <li><b>Variables.</b> Ángulos articulares en el plano de la cámara, eventos y ciclos, y escala métrica a partir de la talla.</li>
+            <li><b>Incertidumbre.</b> Cada variable se da como media ± DE entre ciclos, repeticiones o ventanas de 5 s, con su n y un nivel de fiabilidad.</li>
+            <li><b>Comparación entre sesiones.</b> Prueba t de Welch y cambio mínimo relevante: solo se habla de mejora o empeoramiento cuando se cumplen ambos.</li>
+          </ol>
+          <h3>Fiabilidad de cada valor</h3>
+          <p><span class="rel alta"></span> <b>Alta</b>: vista adecuada para la variable, buena visibilidad y al menos 4 ciclos o 3 repeticiones. <span class="rel media"></span> <b>Media</b>: pocos ciclos, vista oblicua o variable sensible al error 2D. <span class="rel baja"></span> <b>Baja</b>: no se usa para generar alertas.</p>
+          <h3>Límites</h3>
+          <ul>
+            <li>Es una medida en 2D: los ángulos fuera del plano de la cámara se proyectan y se deforman. Por eso cada prueba pide una vista concreta.</li>
+            <li>Los puntos de BlazePose no son marcadores anatómicos colocados por un clínico; el error típico frente a laboratorios de captura 3D es de varios grados.</li>
+            <li>Las referencias son orientativas y proceden de la literatura citada; la interpretación corresponde al fisioterapeuta.</li>
+          </ul>
+        </div>
+        <div class="card prose">
+          <h3>Marcha (vista lateral)</h3>
+          <p>Contacto inicial y despegue por el método de Zeni et al. (2008): máxima posición anterior del talón y mínima del antepié respecto a la pelvis. Con ellos: duración de la zancada, cadencia, fase de apoyo, doble apoyo y, con la talla, velocidad y longitud de zancada. Los ángulos se normalizan al 0–100 % del ciclo y se comparan con una curva de referencia mediante el Gait Variable Score (Baker et al., 2009). Simetría con el índice de Robinson; variabilidad como CV de la zancada.</p>
+          <h3>Sentadilla (lateral o frontal)</h3>
+          <p>Repeticiones sobre la flexión media de rodilla. En lateral: profundidad, flexión de cadera e inclinación del tronco en el punto bajo. En frontal: ángulo de proyección en el plano frontal (FPPA) como medida del valgo dinámico (Munro et al., 2012) y profundidad estimada por acortamiento aparente.</p>
+          <h3>Levantarse de la silla ×5 (lateral)</h3>
+          <p>Prueba de 5 repeticiones de sentarse y levantarse a partir de la altura de la pelvis. Referencias por edad de Bohannon (2006) y umbral de 15 s asociado a caídas recurrentes en mayores de 65 años (Buatois et al., 2008).</p>
+          <h3>Equilibrio (frontal)</h3>
+          <p>Ángulo de oscilación del cuerpo como péndulo invertido (recta tobillos–hombros; Winter, 1995): velocidad, RMS y rango. Detección automática del apoyo monopodal y del tiempo hasta apoyar el pie, con referencias por edad de Springer et al. (2007).</p>
+          <h3>Referencias</h3>
+          <ol class="refs" id="method-refs"></ol>
+        </div>
+      </div>
+    </section>
+
+    <!-- AJUSTES -->
+    <section id="v-ajustes" data-section="ajustes" hidden>
+      <div class="top"><div><h2>Ajustes de la clínica</h2><p>Datos que aparecen en los informes y gestión de la información guardada.</p></div></div>
+      <div class="grid g2e">
+        <div class="card form">
+          <h3>Perfil de la clínica</h3>
+          <div class="field"><label for="st-name">Nombre de la clínica</label><input type="text" id="st-name"></div>
+          <div class="field"><label for="st-physio">Fisioterapeuta</label><input type="text" id="st-physio"></div>
+          <div class="field"><label for="st-contact">Contacto (teléfono, web o dirección)</label><input type="text" id="st-contact"></div>
+          <div class="field"><label for="st-logo">Logotipo (PNG o JPG)</label><input type="file" id="st-logo" accept="image/png,image/jpeg"><div id="st-logo-prev"></div></div>
+          <div class="actions"><button class="btn primary" id="st-save">Guardar cambios</button></div>
+        </div>
+        <div class="card form">
+          <h3>Datos y copia de seguridad</h3>
+          <p class="small" id="st-storage"></p>
+          <div class="actions"><button class="btn" id="st-export">Exportar copia (JSON)</button><label class="btn" for="st-import">Importar copia</label><input type="file" id="st-import" accept="application/json,.json" hidden></div>
+          <div class="actions"><button class="btn" id="st-demo">Cargar datos de ejemplo</button><button class="btn danger" id="st-wipe">Borrar todos los datos</button></div>
+          <div class="confirm" id="st-wipe-confirm" hidden>¿Seguro? Se borrarán pacientes, análisis y ajustes. <button class="btn sm danger" id="st-wipe-yes">Sí, borrar todo</button><button class="btn sm" id="st-wipe-no">Cancelar</button></div>
+          <h3 class="mt">Cómo funciona</h3>
+          <p class="small">MotionClin usa MediaPipe Pose (Google, Apache 2.0) para localizar 33 puntos del cuerpo en cada fotograma. Con ellos calcula ángulos articulares en 2D, cadencia, repeticiones, simetría y oscilación postural. Todo se ejecuta en el navegador: el vídeo no sale del equipo.</p>
+          <p class="small">Las medidas son estimaciones orientativas para apoyar la valoración clínica, no un dispositivo médico certificado.</p>
+        </div>
+      </div>
+    </section>
+  </main>
+</div>
+<div class="toast" id="toast" role="status" hidden></div>
+
+<!--MC:SCRIPTS-START-->
+<script src="vendor/mediapipe-pose/pose.js"></script>
+<script src="vendor/jspdf/jspdf.umd.min.js"></script>
+<script src="js/metrics.js"></script>
+<script src="js/storage.js"></script>
+<script src="js/charts.js"></script>
+<script src="js/pose.js"></script>
+<script src="js/report.js"></script>
+<script src="js/synth.js"></script>
+<script src="js/demo.js"></script>
+<script src="js/app.js"></script>
+<!--MC:SCRIPTS-END-->
+</body>
+</html>

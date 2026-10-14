@@ -1,0 +1,14 @@
+<!doctype html><html><head><meta charset="utf-8"></head><body>
+<input type="file" id="f"><canvas id="c"></canvas><pre id="out"></pre>
+<script src="../vendor/mediapipe-pose/pose.js"></script>
+<script src="../js/metrics.js"></script>
+<script src="../js/pose.js"></script>
+<script>
+// Extrae landmarks de un vídeo para validar el motor fuera del navegador
+document.getElementById('f').onchange = async (e) => {
+  const fps = +(new URLSearchParams(location.search).get('fps') || 30);
+  const eng = new MCPose.PoseEngine('../vendor/mediapipe-pose/'); await eng.init(1);
+  const r = await MCPose.processVideo(eng, e.target.files[0], { fps, canvas: document.getElementById('c') });
+  window.RESULT = r; document.getElementById('out').textContent = 'done';
+};
+</script></body></html>

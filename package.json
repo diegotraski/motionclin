@@ -1,0 +1,11 @@
+{
+  "name": "motionclin",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Análisis biomecánico por vídeo para fisioterapia (MediaPipe Pose en el navegador)",
+  "scripts": {
+    "start": "npx serve .",
+    "test": "node tests/metrics.test.js"
+  },
+  "license": "MIT"
+}
