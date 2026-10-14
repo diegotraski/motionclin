@@ -120,7 +120,7 @@ Hay un ejemplo real completo en [`examples/datos/marcha-lateral.analisis.json`](
 | Extremo a extremo | `tests/e2e.js` | Chromium real: crear paciente, analizar un vídeo, revisar, comparar, descargar PDF y CSV, recargar, móvil |
 | Estilo | `eslint.config.js` | Reglas recomendadas de ESLint |
 
-La cobertura de líneas de los módulos del motor es del 98,6 % (`npm run coverage`). GitHub Actions ejecuta estilo, pruebas, cobertura, verificación y el ejemplo de Node en cada cambio.
+La cobertura de líneas de los módulos del motor es del 98,7 % (`npm run coverage`). GitHub Actions ejecuta estilo, pruebas, cobertura, verificación y el ejemplo de Node en cada cambio.
 
 El simulador es la pieza que lo hace posible: genera landmarks con el mismo formato que MediaPipe a partir de parámetros conocidos (cadencia, velocidad, déficit de flexión, valgo, oscilación…), con ruido, oclusiones e intercambios de etiquetas. Así cada número del motor tiene una verdad con la que compararse.
 

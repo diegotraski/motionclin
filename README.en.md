@@ -9,7 +9,7 @@ From a phone video to a clinical report: 33 body landmarks tracked with AI, metr
 [![Try the demo](https://img.shields.io/badge/▶_Try_the_demo_in_English-diegotraski.github.io/motionclin-0F6FDE?style=for-the-badge)](https://diegotraski.github.io/motionclin/?lang=en)
 
 [![Tests](https://github.com/diegotraski/motionclin/actions/workflows/tests.yml/badge.svg)](https://github.com/diegotraski/motionclin/actions/workflows/tests.yml)
-![Engine coverage](https://img.shields.io/badge/engine_coverage-98.6_%25-2EA44F)
+![Engine coverage](https://img.shields.io/badge/engine_coverage-98.7_%25-2EA44F)
 ![Serverless](https://img.shields.io/badge/serverless-100_%25_in_browser-555)
 ![PWA](https://img.shields.io/badge/PWA-offline-5A0FC8)
 ![MIT](https://img.shields.io/badge/license-MIT-green)
@@ -36,6 +36,31 @@ What makes it more than a pose-detection demo:
 **Try it:** open the [demo in English](https://diegotraski.github.io/motionclin/?lang=en) and click *Analyse a real example video*.
 
 <div align="center"><img src="docs/img/panel-en.png" alt="Clinical dashboard in English: key figures, progress chart and latest analysis" width="88%"></div>
+
+## For reviewers
+
+**A 5-minute tour:**
+
+1. **[Open the demo in English](https://diegotraski.github.io/motionclin/?lang=en)** and click *Analyse a real example video*: the skeleton, angles and metrics are computed live in the browser (1–2 minutes).
+2. **[Ana's comparator](https://diegotraski.github.io/motionclin/?lang=en#comparar-demo-a0~demo-a4)**: first and fifth sessions synchronised, with the statistical verdict.
+3. **PDF reports** made by the app: [clinical](examples/informes/en/gait-ACL-follow-up.pdf) and [patient](examples/informes/en/patient-gait-fifth-session.pdf).
+4. **[docs/METODO.md](docs/METODO.md)** (Spanish): every number with its formula and reference.
+5. **[validacion/](validacion/README.md)** (Spanish): how it would be compared against a gait lab, with an example report.
+
+**What it demonstrates:**
+
+| Area | Evidence |
+|---|---|
+| Data analysis and statistics | Mean ± SD with n per variable, Welch's t-test, Cohen's d, minimal clinically important change, trend regression, Bland–Altman, bootstrap ICC, SEM and MDC95 ([`js/metrics.js`](js/metrics.js), [`js/agreement.js`](js/agreement.js)) |
+| Signal processing | Resampling, left/right swap correction, segment-length cleaning, zero-phase Butterworth filtering, event detection and cycle normalisation |
+| Rigour and verification | Motion simulator with known ground truth, 30 subjects per test ([VALIDACION.md](VALIDACION.md)); published laboratory reference data (Bovi et al., 2011) |
+| Software quality | 25 tests, 98.7 % engine coverage, ESLint and CI that analyses a real video in Chromium on every push ([GitHub Actions](https://github.com/diegotraski/motionclin/actions)) |
+| Healthcare domain | Real clinical tests, age norms, privacy by design (GDPR) and a clinical validation protocol |
+| Product | Installable offline app, synchronised review player, before/after comparator, clinician and patient PDFs, Spanish and English |
+
+No frameworks and no server: apart from MediaPipe (body landmark detection) and jsPDF (PDF drawing), all the code is in this repository and reads exactly as it runs.
+
+<div align="center"><img src="docs/img/informes.png" alt="First page of four PDF reports: clinical with real video, ACL follow-up, patient report and clinical report in English" width="100%"></div>
 
 ## Example clinical cases
 
@@ -90,7 +115,7 @@ This verifies the processing when the pose is known. The pose model's own error 
 - **No backend, no build step.** Plain HTML, CSS and JavaScript, deployed as-is on GitHub Pages. Patient video is processed on-device (privacy by design).
 - **Pure analysis engine.** `js/metrics.js` has no DOM dependency: the same code runs in the browser, in the tests and [from Node scripts](examples/analizar-desde-node.js).
 - **Pose sequence storage.** Each analysis stores the pose compressed to 16 bits (~70 kB per 10 s, < 0.1 px error), so old sessions can be replayed and compared without keeping the video.
-- **Testing.** 25 unit tests with known values, a simulator-based verification suite, an end-to-end test in Chromium with real video, ESLint, and 98.6 % line coverage of the engine. GitHub Actions runs everything on every push.
+- **Testing.** 25 unit tests with known values, a simulator-based verification suite, an end-to-end test in Chromium with real video, ESLint, and 98.7 % line coverage of the engine. GitHub Actions runs everything on every push.
 
 Design decisions and rejected alternatives: [docs/ARQUITECTURA.md](docs/ARQUITECTURA.md) (Spanish).
 

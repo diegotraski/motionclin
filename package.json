@@ -1,6 +1,6 @@
 {
   "name": "motionclin",
-  "version": "3.4.0",
+  "version": "3.4.1",
   "private": true,
   "description": "Análisis biomecánico por vídeo para fisioterapia: MediaPipe Pose en el navegador, métodos publicados y estadística entre sesiones.",
   "homepage": "https://diegotraski.github.io/motionclin/",
@@ -18,7 +18,7 @@
     "lint": "eslint .",
     "example": "node examples/analizar-desde-node.js",
     "e2e": "node tests/app.e2e.js",
-    "ejemplos": "node tests/generar-ejemplos.js",
+    "ejemplos": "node tests/generar-datos.js && node tests/generar-ejemplos.js",
     "concordancia": "node validacion/concordancia.js",
     "concordancia:demo": "node validacion/generar-demo.js && node validacion/concordancia.js validacion/demo-datos.json validacion/demo-informe.md"
   },

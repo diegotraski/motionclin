@@ -1,5 +1,10 @@
 # Historial de cambios
 
+## 3.4.1 · Documentación para revisores
+
+- README en español e inglés con una ruta de 5 minutos por el proyecto y una tabla de lo que demuestra, con enlaces al código.
+- Imagen de los informes actualizada (clínico, paciente e inglés) y datos de ejemplo regenerados con el motor actual (`npm run ejemplos` los rehace).
+
 ## 3.4.0 · Informe para el paciente e inglés
 
 - **Informe para el paciente:** una página en lenguaje sencillo con la métrica principal, un semáforo frente a personas sanas de su edad y velocidad, una escala visual por variable, la evolución desde la primera sesión explicada con palabras (mejora real solo si supera el error de medida) y un mensaje editable del fisioterapeuta.

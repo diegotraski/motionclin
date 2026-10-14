@@ -1,6 +1,6 @@
 # Ejemplos
 
-Todo lo que hay aquí lo ha generado la propia app, sin editar a mano. Los informes y las capturas se regeneran con `npm run ejemplos`.
+Todo lo que hay aquí lo ha generado la propia app, sin editar a mano. Los informes, las capturas y los datos se regeneran con `npm run ejemplos`.
 
 ## Informes PDF
 
@@ -11,6 +11,10 @@ Todo lo que hay aquí lo ha generado la propia app, sin editar a mano. Los infor
 | [`sentadilla-valgo-dinamico.pdf`](informes/sentadilla-valgo-dinamico.pdf) | Carlos, dolor patelofemoral, vista frontal | Valgo dinámico (FPPA) repetición a repetición y su reducción entre sesiones |
 | [`levantarse-silla-x5.pdf`](informes/levantarse-silla-x5.pdf) | Marta, 76 años, prevención de caídas | Prueba de 5 repeticiones con la referencia por edad y el umbral de riesgo de caídas |
 | [`equilibrio-oscilacion.pdf`](informes/equilibrio-oscilacion.pdf) | Marta, bipedestación | Oscilación angular por ventanas de 5 s y mejora significativa entre sesiones |
+| [`paciente-marcha-primera-sesion.pdf`](informes/paciente-marcha-primera-sesion.pdf) | Ana, 1.ª sesión · **informe para el paciente** | Una página en lenguaje sencillo: semáforo con puntos en ámbar y rojo, escala visual por variable y mensaje automático |
+| [`paciente-marcha-quinta-sesion.pdf`](informes/paciente-marcha-quinta-sesion.pdf) | Ana, 5.ª sesión · **informe para el paciente** | La evolución desde la primera sesión explicada con palabras, todo en verde |
+| [`en/gait-ACL-follow-up.pdf`](informes/en/gait-ACL-follow-up.pdf) | Ana, 5.ª sesión · **en inglés** | El informe clínico completo con la interfaz en inglés |
+| [`en/patient-gait-fifth-session.pdf`](informes/en/patient-gait-fifth-session.pdf) | Ana, 5.ª sesión · **patient report, English** | El informe para el paciente en inglés |
 
 Los casos de Ana, Carlos y Marta son **ficticios**: su movimiento lo genera el simulador (`js/synth.js`) con valores conocidos y lo procesa el mismo motor que un vídeo real.
 
@@ -35,7 +39,7 @@ Marcha · vista lateral · 30 Hz · 3 zancadas · calidad 93 %
 
   ESPACIOTEMPORALES
   Velocidad de marcha        1.27 ± 0.03 m/s    ≥ 1,14 m/s (media 1,34 para edad y sexo − 15 %)   en rango   fiabilidad media
-  Cadencia                   98 ± 1 pasos/min   95–125                                             en rango   fiabilidad media
+  Cadencia                   98 ± 1 pasos/min   96–123 (laboratorio)                               en rango   fiabilidad media
   ...
 Comparación de dos sesiones simuladas (antes → después):
   Velocidad de marcha                          Δ +0.25 m/s     p = < 0,001  → MEJORA

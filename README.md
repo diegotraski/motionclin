@@ -9,7 +9,7 @@ Del vídeo del móvil a un informe clínico: 33 puntos del cuerpo detectados con
 [![Probar la demo](https://img.shields.io/badge/▶_Probar_la_demo-diegotraski.github.io/motionclin-0F6FDE?style=for-the-badge)](https://diegotraski.github.io/motionclin/)
 
 [![Pruebas](https://github.com/diegotraski/motionclin/actions/workflows/tests.yml/badge.svg)](https://github.com/diegotraski/motionclin/actions/workflows/tests.yml)
-![Cobertura del motor](https://img.shields.io/badge/cobertura_del_motor-98,6_%25-2EA44F)
+![Cobertura del motor](https://img.shields.io/badge/cobertura_del_motor-98,7_%25-2EA44F)
 ![Sin servidor](https://img.shields.io/badge/sin_servidor-100_%25_en_el_navegador-555)
 ![PWA](https://img.shields.io/badge/PWA-sin_conexión-5A0FC8)
 ![Licencia MIT](https://img.shields.io/badge/licencia-MIT-green)
@@ -33,9 +33,35 @@ Lo que lo diferencia de una demo de detección de pose:
 - **Métodos publicados**, no ángulos sueltos: eventos de la marcha de Zeni, Gait Variable Score, índice de simetría de Robinson, valgo dinámico FPPA, péndulo invertido.
 - **Cada número con su incertidumbre**: media ± DE entre ciclos, n y un nivel de fiabilidad que depende de la vista y la visibilidad. Los valores poco fiables no generan alertas.
 - **«Mejora» solo cuando lo es**: prueba t de Welch más el cambio mínimo clínicamente relevante de cada variable.
+- **Referencias de laboratorio a su medida**: datos de captura 3D de 235 personas sanas, elegidos por la edad y la velocidad de marcha del paciente.
 - **Verificado**: 30 sujetos simulados por prueba con valores conocidos. Esa verificación encontró dos errores del motor, que están documentados y corregidos.
+- **Preparado para validarse**: protocolo y análisis de concordancia (Bland-Altman, ICC) listos para compararlo con un laboratorio de marcha.
+- **Dos informes**: uno técnico para el fisioterapeuta y uno de una página, con semáforo, para el paciente. En español y en inglés.
 
 **Pruébalo:** abre la [demo](https://diegotraski.github.io/motionclin/) y pulsa *Analizar un vídeo real de ejemplo*.
+
+## Para quien revisa este proyecto
+
+**Ruta de 5 minutos:**
+
+1. **[Abre la demo](https://diegotraski.github.io/motionclin/)** y pulsa *Analizar un vídeo real de ejemplo*: verás el esqueleto, los ángulos y las métricas calculándose en el navegador (tarda 1–2 minutos).
+2. **[Comparador de Ana](https://diegotraski.github.io/motionclin/#comparar-demo-a0~demo-a4)**: primera y quinta sesión sincronizadas, con el veredicto estadístico.
+3. **Informes PDF**: el [clínico](examples/informes/marcha-seguimiento-LCA.pdf) y el [del paciente](examples/informes/paciente-marcha-quinta-sesion.pdf), generados por la propia app.
+4. **[docs/METODO.md](docs/METODO.md)**: cada número con su fórmula y su referencia bibliográfica.
+5. **[validacion/](validacion/README.md)**: cómo se compararía con un laboratorio, con un informe de ejemplo.
+
+**Qué demuestra:**
+
+| Área | Evidencia |
+|---|---|
+| Análisis de datos y estadística | Media ± DE con n por variable, t de Welch, d de Cohen, cambio mínimo relevante, regresión de la tendencia, Bland-Altman, ICC con bootstrap, SEM y MDC95 ([`js/metrics.js`](js/metrics.js), [`js/agreement.js`](js/agreement.js)) |
+| Procesado de señal | Remuestreo, corrección izquierda/derecha, limpieza por longitud de segmento, filtro Butterworth de fase cero, detección de eventos y normalización por ciclo ([método](docs/METODO.md)) |
+| Rigor y verificación | Simulador de movimiento con valores conocidos, 30 sujetos por prueba ([VALIDACION.md](VALIDACION.md)); referencias de laboratorio publicadas ([Bovi et al., 2011](docs/METODO.md#7-valores-de-referencia)) |
+| Calidad de software | 25 pruebas, 98,7 % de cobertura del motor, ESLint e integración continua que analiza un vídeo real en Chromium en cada cambio ([GitHub Actions](https://github.com/diegotraski/motionclin/actions)) |
+| Dominio sanitario | Pruebas clínicas reales (marcha, sentadilla, silla ×5, equilibrio), normas por edad, privacidad por diseño (RGPD) y un protocolo de validación clínica |
+| Producto | App instalable sin conexión, reproductor sincronizado, comparador antes/después, informes PDF para clínico y paciente, español e inglés |
+
+Sin frameworks ni servidor: aparte de MediaPipe (detección de los puntos del cuerpo) y jsPDF (dibujo del PDF), todo el código está en este repositorio y se puede leer tal como se ejecuta. Decisiones técnicas y alternativas descartadas en [docs/ARQUITECTURA.md](docs/ARQUITECTURA.md); historial en [CHANGELOG.md](CHANGELOG.md).
 
 ## Casos clínicos de ejemplo
 
@@ -80,8 +106,8 @@ Los tres pacientes de la demo son ficticios. Su movimiento lo genera un simulado
 | Equilibrio | frontal | Velocidad y amplitud de la oscilación, apoyo monopodal con referencia por edad |
 
 <div align="center">
-<img src="docs/img/informes.png" alt="Primera página de tres informes PDF: marcha con vídeo real, seguimiento de ligamento cruzado y sentadilla con valgo" width="88%">
-<br><sub>Informes generados por la app. <a href="examples/informes/">Ver los cinco PDF</a>.</sub>
+<img src="docs/img/informes.png" alt="Primera página de cuatro informes PDF: clínico con vídeo real, clínico de seguimiento de ligamento cruzado, informe para el paciente con semáforo e informe clínico en inglés" width="100%">
+<br><sub>Informes generados por la app. <a href="examples/informes/">Ver todos los PDF</a>.</sub>
 </div>
 
 ## Rigor científico
@@ -109,7 +135,7 @@ La verificación demuestra que el procesado recupera los valores verdaderos cuan
 | | |
 |---|---|
 | Pruebas | 25 pruebas con valores conocidos (`npm test`), verificación con simulador (`npm run validate`) y prueba extremo a extremo en Chromium con un vídeo real |
-| Cobertura | 98,6 % de las líneas del motor (`npm run coverage`) |
+| Cobertura | 98,7 % de las líneas del motor (`npm run coverage`) |
 | Estilo | ESLint (`npm run lint`) |
 | Integración continua | GitHub Actions en cada cambio: estilo, pruebas, cobertura, verificación, ejemplo de Node y **la app completa en Chromium** (analiza el vídeo real con MediaPipe, genera el PDF y abre el comparador; `npm run e2e`) |
 | Diseño | Motor de análisis puro, sin DOM: se usa igual en el navegador, en las pruebas y [desde scripts](examples/analizar-desde-node.js) |
