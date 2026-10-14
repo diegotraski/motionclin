@@ -61,6 +61,8 @@ Los tres pacientes de la demo son ficticios. Su movimiento lo genera un simulado
 | **Comparar** | Dos sesiones lado a lado con el movimiento sincronizado, las curvas superpuestas sobre la banda normal y la estadística del cambio. |
 | **Seguir** | Evolución con barras de error y tendencia semanal con su p. |
 | **Informar** | PDF con tabla de referencias, fiabilidad, gráficas, comparación, método y bibliografía. |
+| **Explicar al paciente** | Una página en lenguaje sencillo: semáforo verde/ámbar/rojo frente a personas sanas de su edad, escala visual, evolución y un mensaje del fisioterapeuta ([ejemplo](examples/informes/paciente-marcha-quinta-sesion.pdf)). |
+| **Español e inglés** | Interfaz, análisis guardados, gráficas e informes PDF en los dos idiomas, con un clic ([*English*](https://diegotraski.github.io/motionclin/?lang=en)). |
 | **Exportar** | CSV con series filtradas, eventos y ciclos para análisis propios; copia de seguridad en JSON. |
 | **Trabajar sin conexión** | Se instala como app; el modelo de visión queda guardado en el dispositivo. |
 
@@ -106,7 +108,7 @@ La verificación demuestra que el procesado recupera los valores verdaderos cuan
 
 | | |
 |---|---|
-| Pruebas | 23 pruebas con valores conocidos (`npm test`), verificación con simulador (`npm run validate`) y prueba extremo a extremo en Chromium con un vídeo real |
+| Pruebas | 25 pruebas con valores conocidos (`npm test`), verificación con simulador (`npm run validate`) y prueba extremo a extremo en Chromium con un vídeo real |
 | Cobertura | 98,6 % de las líneas del motor (`npm run coverage`) |
 | Estilo | ESLint (`npm run lint`) |
 | Integración continua | GitHub Actions en cada cambio: estilo, pruebas, cobertura, verificación, ejemplo de Node y **la app completa en Chromium** (analiza el vídeo real con MediaPipe, genera el PDF y abre el comparador; `npm run e2e`) |
@@ -165,6 +167,8 @@ js/
   metrics.js    motor: señal, eventos, métricas, referencias, estadística   (sin DOM)
   norms.js      datos normativos de laboratorio (Bovi et al., 2011)          (sin DOM)
   agreement.js  concordancia: Bland-Altman, ICC, CMC, MDC                    (sin DOM)
+  i18n.js       idioma de la interfaz (español / inglés) · i18n-en.js: textos
+  patient-report.js  informe de una página para el paciente
   synth.js      simulador de movimiento con valores conocidos                (sin DOM)
   replay.js     secuencia de pose comprimida a 16 bits                       (sin DOM)
   pose.js       MediaPipe: vídeo fotograma a fotograma y cámara

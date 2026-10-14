@@ -213,3 +213,38 @@ test('Bland-Altman, ICC con bootstrap, CMC, eventos y MDC', () => {
   assert.strictEqual(ev.n, 2); assert.strictEqual(ev.missed, 1); near(ev.mae, 15, 0.01, 'ms');
   const m = A.mdc([10, 12, 11, 13, 12], [11, 12, 10, 14, 12]); assert.ok(m.mdc95 > m.sem);
 });
+
+test('informe del paciente: semáforo y selección de variables', () => {
+  const P = require('../js/patient-report.js');
+  const m = (value, lo, hi, ev) => ({ key: 'x', value, ref: { lo, hi }, eval: ev });
+  assert.strictEqual(P.lightOf(m(110, 96, 123, 'normal')), 'green');
+  assert.strictEqual(P.lightOf(m(90, 96, 123, 'low')), 'amber', 'fuera menos de medio rango');
+  assert.strictEqual(P.lightOf(m(70, 96, 123, 'low')), 'red', 'fuera más de medio rango');
+  assert.strictEqual(P.lightOf(m(1.1, 1.14, null, 'low')), 'amber', 'límite único: 15 %');
+  assert.strictEqual(P.lightOf(m(0.9, 1.14, null, 'low')), 'red');
+  assert.strictEqual(P.lightOf({ key: 'vel', value: 1.8, ref: null, eval: null }), 'grey', 'sin referencia no se colorea');
+  // con un análisis real: la métrica principal no se repite y las de fiabilidad baja no se enseñan
+  const g = S.gait({ seed: 3, dur: 9, heightCm: 170 });
+  const a = M.analyze('gait', g.frames, Object.assign({}, g.meta, { patient: { heightCm: 170, age: 40 } }));
+  const sel = P.selectMetrics(a);
+  assert.ok(sel.length >= 4 && sel.length <= 6);
+  assert.ok(sel.every((x) => x.key !== a.main.key && x.rel !== 'baja' && P.PLAIN.es[x.key] && P.PLAIN.en[x.key]));
+  assert.ok(a.metrics.find((x) => x.key === 'cadence').ref.lo > 0, 'los límites de referencia se guardan con la métrica');
+});
+
+test('idioma: traducción de textos fijos, plantillas con números y textos del motor', () => {
+  require('../js/i18n-en.js');
+  const I = require('../js/i18n.js');
+  I.setDict(globalThis.MCI18nEN); I.setLang('en', { rerender: false });
+  assert.strictEqual(I.t('Velocidad de marcha'), 'Walking speed');
+  assert.strictEqual(I.t('Sesión 3 de 5'), 'Session 3 of 5');
+  assert.strictEqual(I.t('1,27 ± 0,03 m/s'), '1.27 ± 0.03 m/s', 'coma decimal → punto');
+  assert.strictEqual(I.t('14 de octubre de 2026'), '14 October 2026');
+  assert.strictEqual(I.t('Doble apoyo: 31,5% ± 2 (referencia 20–32 % (laboratorio); fiabilidad media).'), 'Double support: 31.5% ± 2 (reference 20–32 % (laboratory); medium reliability).');
+  // la interpretación completa de un análisis real queda sin español
+  const g = S.gait({ seed: 5, dur: 9, heightCm: 170 });
+  const a = M.analyze('gait', g.frames, Object.assign({}, g.meta, { patient: { heightCm: 170, age: 40 } }));
+  for (const s of [a.interpretation, ...a.methods, ...a.metrics.map((m) => m.label)]) assert.ok(!/[áéíóúñ]|\b(de|la|con|los)\b/.test(I.t(s)), I.t(s));
+  I.setLang('es', { rerender: false });
+  assert.strictEqual(I.t('Velocidad de marcha'), 'Velocidad de marcha');
+});

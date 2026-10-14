@@ -357,7 +357,7 @@
     return {
       key, label, unit, group: opts.group || null,
       value: rv, sd: round(s, dec), n: opts.n !== undefined ? opts.n : arr.length || null,
-      ref: opts.ref ? { text: opts.ref.text, src: opts.ref.src || null } : null, eval: ev, rel: opts.rel || 'alta',
+      ref: opts.ref ? { text: opts.ref.text, src: opts.ref.src || null, lo: isNum(opts.ref.lo) ? opts.ref.lo : null, hi: isNum(opts.ref.hi) ? opts.ref.hi : null } : null, eval: ev, rel: opts.rel || 'alta',
     };
   }
   const samplesOf = (a) => nums(a).map((v) => round(v, 3));

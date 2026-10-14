@@ -27,12 +27,12 @@ const INFORMES = [
 (async () => {
   const srv = await serve(), base = `http://localhost:${srv.address().port}/index.html`;
   const browser = await pw.chromium.launch(process.env.CHROME ? { executablePath: process.env.CHROME } : {});
-  const page = await browser.newPage({ viewport: { width: 1440, height: 900 }, acceptDownloads: true });
+  const page = await browser.newPage({ viewport: { width: 1440, height: 900 }, acceptDownloads: true, locale: 'es-ES' });
   const outPdf = path.join(ROOT, 'examples/informes'), outImg = path.join(ROOT, 'docs/img');
-  fs.mkdirSync(outPdf, { recursive: true }); fs.mkdirSync(outImg, { recursive: true });
-  const pdf = async (id, name) => {
-    await page.goto(base + '#informe-' + id); await page.waitForSelector('.paper');
-    const [dl] = await Promise.all([page.waitForEvent('download'), page.click('#rep-download')]);
+  fs.mkdirSync(path.join(outPdf, 'en'), { recursive: true }); fs.mkdirSync(outImg, { recursive: true });
+  const pdf = async (id, name, btn = '#rep-download', lang = '') => {
+    await page.goto(base + lang + '#informe-' + id); await page.waitForSelector('.paper');
+    const [dl] = await Promise.all([page.waitForEvent('download'), page.click(btn)]);
     await dl.saveAs(path.join(outPdf, name)); console.log('✓', name);
   };
   await page.goto(base + '#panel');
@@ -40,6 +40,12 @@ const INFORMES = [
   await page.waitForTimeout(600);
   await page.screenshot({ path: path.join(outImg, 'panel.png') }); console.log('✓ docs/img/panel.png');
   for (const [id, name] of INFORMES) await pdf(id, name);
+  // informe para el paciente (primera y última sesión) y versión en inglés
+  await pdf('demo-a0', 'paciente-marcha-primera-sesion.pdf', '#rep-patient');
+  await pdf('demo-a4', 'paciente-marcha-quinta-sesion.pdf', '#rep-patient');
+  await pdf('demo-a4', 'en/gait-ACL-follow-up.pdf', '#rep-download', '?lang=en');
+  await pdf('demo-a4', 'en/patient-gait-fifth-session.pdf', '#rep-patient', '?lang=en');
+  await page.goto(base + '?lang=es#panel'); await page.waitForTimeout(300);
   await page.goto(base + '#sesion-demo-a4'); await page.waitForTimeout(700);
   const ph = await page.$('.d-phases-card'); await ph.scrollIntoViewIfNeeded(); await ph.screenshot({ path: path.join(outImg, 'fases.png') }); console.log('✓ docs/img/fases.png');
   await page.goto(base + '#comparar-demo-a0~demo-a4'); await page.waitForTimeout(600);

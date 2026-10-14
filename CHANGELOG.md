@@ -1,5 +1,12 @@
 # Historial de cambios
 
+## 3.4.0 · Informe para el paciente e inglés
+
+- **Informe para el paciente:** una página en lenguaje sencillo con la métrica principal, un semáforo frente a personas sanas de su edad y velocidad, una escala visual por variable, la evolución desde la primera sesión explicada con palabras (mejora real solo si supera el error de medida) y un mensaje editable del fisioterapeuta.
+- **Interfaz en español e inglés:** selector en la barra lateral, `?lang=en` en la URL y detección del idioma del navegador. Se traducen la app, los análisis ya guardados, las gráficas, el reproductor, la exportación CSV y los dos informes PDF.
+- Los límites de referencia se guardan con cada métrica (para las escalas visuales).
+- Ejemplos nuevos: informes del paciente (primera y quinta sesión) e informes en inglés. 25 pruebas; la prueba extremo a extremo comprueba el informe del paciente y el cambio de idioma.
+
 ## 3.3.0 · Datos de laboratorio y validación
 
 - **Referencias de laboratorio emparejadas por velocidad:** la curva de rodilla, la banda del muslo, la cadencia, la fase de apoyo y el doble apoyo se comparan con los datos de captura 3D de Bovi et al. (2011), 235 personas sanas, eligiendo el grupo de edad (jóvenes o adultos) y la clase de velocidad del paciente. Rango normal = media ± 2 DE. Con el vídeo real de ejemplo, el apoyo y el doble apoyo dejan de salir fuera de rango por comparar con una velocidad distinta.

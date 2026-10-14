@@ -5,12 +5,12 @@
   const EV = { normal: ['En rango', OK], low: ['Bajo', WARN], high: ['Alto', WARN] };
   const REL = { alta: ['Alta', OK], media: ['Media', WARN], baja: ['Baja', BAD] };
   // Helvetica de jsPDF solo cubre WinAnsi: sustituye los símbolos que no existen en esa codificación
-  const T = (s) => String(s == null ? '' : s).replace(/≥/g, '>=').replace(/≤/g, '<=').replace(/−/g, '-').replace(/Δ/g, 'Dif.').replace(/₀/g, '0').replace(/≈/g, '~').replace(/→/g, '->').replace(/⚠/g, '!').replace(/²/g, '2');
+  const T = (s) => String(s == null ? '' : window.MCI18n ? window.MCI18n.t(String(s)) : s).replace(/≥/g, '>=').replace(/≤/g, '<=').replace(/−/g, '-').replace(/Δ/g, 'Dif.').replace(/₀/g, '0').replace(/≈/g, '~').replace(/→/g, '->').replace(/⚠/g, '!').replace(/²/g, '2');
   const dec = (v) => (typeof v === 'number' || typeof v === 'string' ? String(v).replace('.', ',') : v);
   const sep = (u) => (!u || u === '°' || u === '%' ? '' : ' ');
   const valSd = (m) => (m.value == null ? '–' : `${dec(m.value)}${m.sd != null ? ' ± ' + dec(m.sd) : ''}${sep(m.unit)}${m.unit || ''}`);
   const fmtP = (p) => (p == null ? '–' : p < 0.001 ? '< 0,001' : dec(p.toFixed(3)));
-  const fmtDate = (iso) => new Date(iso).toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' });
+  const fmtDate = (iso) => new Date(iso).toLocaleDateString(window.MCI18n && window.MCI18n.lang === 'en' ? 'en-GB' : 'es-ES', { day: '2-digit', month: 'long', year: 'numeric' });
   const age = (p) => (p && p.birthYear ? new Date().getFullYear() - p.birthYear : null);
   const LIGHT = { bg: '#ffffff', fg: '#10233b', muted: '#5b6e85', grid: '#e3eaf3' };
   const COLORS = { L: '#0f9e8f', R: '#d98a00', band: 'rgba(24,120,214,.12)', blue: '#1878d6' };

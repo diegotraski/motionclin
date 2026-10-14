@@ -26,7 +26,7 @@ function serve() {
 (async () => {
   const srv = await serve(), base = `http://localhost:${srv.address().port}/index.html`;
   const browser = await pw.chromium.launch(process.env.CHROME ? { executablePath: process.env.CHROME } : {});
-  const page = await browser.newPage({ viewport: { width: 1366, height: 900 }, acceptDownloads: true });
+  const page = await browser.newPage({ viewport: { width: 1366, height: 900 }, acceptDownloads: true, locale: 'es-ES' });
   const errors = [];
   page.on('pageerror', (e) => errors.push(e.message));
   page.on('console', (m) => { if (m.type() === 'error' && !/fonts\.g|ERR_TUNNEL|ERR_NAME|favicon/.test(m.text())) errors.push(m.text()); });
@@ -63,12 +63,23 @@ function serve() {
   const pdf = path.join(require('os').tmpdir(), 'motionclin-e2e.pdf'); await dl.saveAs(pdf);
   const size = fs.statSync(pdf).size; assert.ok(size > 50000, `PDF de ${size} bytes`);
   step(`informe PDF generado (${Math.round(size / 1024)} kB)`);
+  const [dl2] = await Promise.all([page.waitForEvent('download'), page.click('#rep-patient')]);
+  const pdf2 = path.join(require('os').tmpdir(), 'motionclin-e2e-paciente.pdf'); await dl2.saveAs(pdf2);
+  assert.ok(fs.statSync(pdf2).size > 20000); step('informe para el paciente generado');
 
   // Comparador antes/después
   await page.goto(base + '#comparar-demo-a0~demo-a4'); await page.waitForTimeout(500);
   assert.match(await page.textContent('#cmp-body .summary'), /Mejora demostrada/);
   assert.strictEqual(await page.locator('#cmp-body canvas.pl-canvas').count(), 2);
   step('comparador de sesiones');
+
+  // Idioma: inglés y vuelta al español
+  await page.click('[data-lang="en"]'); await page.waitForTimeout(400);
+  assert.match(await page.textContent('#cmp-body .summary'), /Proven improvement/);
+  assert.match(await page.textContent('nav'), /Dashboard/);
+  await page.click('[data-lang="es"]'); await page.waitForTimeout(400);
+  assert.match(await page.textContent('nav'), /Panel/);
+  step('interfaz en inglés y vuelta al español');
 
   // Persistencia
   await page.reload(); await page.waitForFunction(() => window.MCApp && window.MCApp.state.analyses.some((x) => x.patientId === 'sample-p' && x.replay));

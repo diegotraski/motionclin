@@ -1,7 +1,7 @@
 /* MotionClin · service worker: la app y el modelo de visión quedan guardados para usarla sin conexión. */
-const VERSION = 'motionclin-v3.3';
+const VERSION = 'motionclin-v3.4';
 const SHELL = ['./', 'index.html', 'manifest.webmanifest', 'css/app.css',
-  'js/norms.js', 'js/metrics.js', 'js/storage.js', 'js/charts.js', 'js/pose.js', 'js/report.js', 'js/replay.js', 'js/player.js', 'js/phases.js', 'js/synth.js', 'js/demo.js', 'js/app.js',
+  'js/i18n-en.js', 'js/i18n.js', 'js/norms.js', 'js/metrics.js', 'js/storage.js', 'js/charts.js', 'js/pose.js', 'js/report.js', 'js/patient-report.js', 'js/replay.js', 'js/player.js', 'js/phases.js', 'js/synth.js', 'js/demo.js', 'js/app.js',
   'vendor/jspdf/jspdf.umd.min.js', 'vendor/mediapipe-pose/pose.js', 'icons/icon-192.png'];
 
 self.addEventListener('install', (e) => { e.waitUntil(caches.open(VERSION).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting())); });

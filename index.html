@@ -32,6 +32,7 @@
       <a href="#metodo" data-view="metodo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.8 3h10.4a2 2 0 0 0 1.8-3l-5-9V3"/><path d="M7.5 14h9"/></svg><span>Método</span></a>
       <a href="#ajustes" data-view="ajustes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><span>Ajustes</span></a>
     </nav>
+    <div class="lang" role="group" aria-label="Idioma"><button type="button" data-lang="es" aria-pressed="true" title="Español">ES</button><button type="button" data-lang="en" aria-pressed="false" title="English">EN</button></div>
     <div class="privacy"><b>Privacidad por diseño</b>El vídeo se analiza en este navegador. No se sube a ningún servidor y los datos se guardan solo en este equipo.</div>
   </aside>
 
@@ -167,7 +168,7 @@
     <section id="v-informe" data-section="informe" hidden>
       <div class="top">
         <div><h2>Informe PDF</h2><p>El documento que el fisioterapeuta entrega al paciente.</p></div>
-        <div class="actions"><select id="rep-select" aria-label="Análisis" style="width:auto;max-width:100%"></select><button class="btn primary" id="rep-download">Descargar PDF</button></div>
+        <div class="actions"><select id="rep-select" aria-label="Análisis" style="width:auto;max-width:100%"></select><button class="btn primary" id="rep-download">Descargar PDF</button><button class="btn" id="rep-patient" title="Una página en lenguaje sencillo, con semáforo y evolución">PDF para el paciente</button></div>
       </div>
       <div id="rep-preview"></div>
     </section>
@@ -267,12 +268,15 @@
 <!--MC:SCRIPTS-START-->
 <script src="vendor/mediapipe-pose/pose.js"></script>
 <script src="vendor/jspdf/jspdf.umd.min.js"></script>
+<script src="js/i18n-en.js"></script>
+<script src="js/i18n.js"></script>
 <script src="js/norms.js"></script>
 <script src="js/metrics.js"></script>
 <script src="js/storage.js"></script>
 <script src="js/charts.js"></script>
 <script src="js/pose.js"></script>
 <script src="js/report.js"></script>
+<script src="js/patient-report.js"></script>
 <script src="js/replay.js"></script>
 <script src="js/player.js"></script>
 <script src="js/phases.js"></script>

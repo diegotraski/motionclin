@@ -63,7 +63,7 @@
     [state.patients, state.analyses] = await Promise.all([S.all('patients'), S.all('analyses')]);
     state.clinic = await S.setting('clinic', { name: 'Clínica Motion Fisio', physio: '', contact: '', logo: null });
     const seeded = await S.setting('seeded', false);
-    const DEMO_VERSION = 4, dv = await S.setting('demoVersion', 0);
+    const DEMO_VERSION = 5, dv = await S.setting('demoVersion', 0);
     const oldDemo = state.analyses.some((a) => a.demo && a.patientId !== 'sample-p') && dv !== DEMO_VERSION;
     if (oldDemo) await clearDemo(true);
     if ((!seeded && !state.patients.length) || oldDemo) { await loadDemo(); await S.setSetting('seeded', true); await S.setSetting('demoVersion', DEMO_VERSION); }
@@ -258,7 +258,7 @@
       const all = [...state.analyses].sort((a, b) => b.date.localeCompare(a.date));
       sel.innerHTML = all.map((a) => { const p = patientById(a.patientId); return `<option value="${a.id}">${esc(p ? p.name : '—')} · ${TYPE[a.type]} · ${fmtDate(a.date)}</option>`; }).join('');
       if (id && all.some((a) => a.id === id)) sel.value = id;
-      $('#rep-download').disabled = !all.length;
+      $('#rep-download').disabled = !all.length; $('#rep-patient').disabled = !all.length;
       renderReportPreview();
     },
 
@@ -555,7 +555,7 @@
         });
       }
     } else q('.d-player').innerHTML = '<p class="small">Este análisis se hizo con una versión anterior y no guarda la secuencia del movimiento.</p>';
-    const ta = q('.d-notes'); ta.value = a.notes || a.interpretation;
+    const ta = q('.d-notes'); ta.value = a.notes || interp(a);
     ta.addEventListener('change', async () => { a.notes = ta.value; await S.put('analyses', a); toast('Valoración guardada'); });
     q('.d-csv').onclick = () => exportAnalysisCSV(a);
     const nb = q('.d-new'); if (nb) nb.onclick = () => { destroyPlayers(); container.hidden = true; window.scrollTo({ top: 0, behavior: 'smooth' }); };
@@ -567,19 +567,21 @@
   }
 
   // Datos del análisis para investigación: series filtradas, eventos y ciclos promedio
+  const interp = (a) => (window.MCI18n ? window.MCI18n.t(a.interpretation) : a.interpretation);
   function exportAnalysisCSV(a) {
-    const p = patientById(a.patientId) || {}, num = (v) => (v == null ? '' : String(v).replace('.', ','));
+    const en = window.MCI18n && window.MCI18n.lang === 'en', tl = (s) => (window.MCI18n ? window.MCI18n.t(s) : s);
+    const p = patientById(a.patientId) || {}, num = (v) => (v == null ? '' : en ? String(v) : String(v).replace('.', ','));
     const keys = Object.keys(a.series).filter((k) => k !== 't');
-    const lines = [`# MotionClin · ${p.name || ''} · ${TYPE[a.type]} · ${a.date.slice(0, 10)} · ${a.fs} Hz · filtro ${a.fc} Hz`, ['t (s)', ...keys].join(';')];
+    const lines = [`# MotionClin · ${p.name || ''} · ${tl(TYPE[a.type])} · ${a.date.slice(0, 10)} · ${a.fs} Hz · ${en ? 'filter' : 'filtro'} ${a.fc} Hz`, ['t (s)', ...keys].join(';')];
     a.series.t.forEach((t, i) => lines.push([num(t), ...keys.map((k) => num(a.series[k][i]))].join(';')));
-    lines.push('', '# Eventos (s)');
+    lines.push('', en ? '# Events (s)' : '# Eventos (s)');
     for (const [k, v] of Object.entries(a.events || {})) lines.push([k, ...(v || []).map(num)].join(';'));
     if (a.cycles) {
-      lines.push('', '# Ciclo promedio (0–100 %)', ['%', ...Object.keys(a.cycles).filter((k) => a.cycles[k] && a.cycles[k].mean).flatMap((k) => [k + ' media', k + ' DE'])].join(';'));
+      lines.push('', en ? '# Mean cycle (0–100 %)' : '# Ciclo promedio (0–100 %)', ['%', ...Object.keys(a.cycles).filter((k) => a.cycles[k] && a.cycles[k].mean).flatMap((k) => (en ? [k + ' mean', k + ' SD'] : [k + ' media', k + ' DE']))].join(';'));
       for (let i = 0; i < 51; i++) lines.push([i * 2, ...Object.keys(a.cycles).filter((k) => a.cycles[k] && a.cycles[k].mean).flatMap((k) => [num(a.cycles[k].mean[i]), num(a.cycles[k].sd[i])])].join(';'));
     }
-    lines.push('', '# Métricas', 'Parámetro;Media;DE;n;Unidad;Referencia;Valoración;Fiabilidad');
-    for (const m of a.metrics) lines.push([m.label, num(m.value), num(m.sd), m.n == null ? '' : m.n, m.unit, m.ref ? m.ref.text : '', m.eval || '', m.rel || ''].join(';'));
+    lines.push('', en ? '# Metrics' : '# Métricas', en ? 'Parameter;Mean;SD;n;Unit;Reference;Assessment;Reliability' : 'Parámetro;Media;DE;n;Unidad;Referencia;Valoración;Fiabilidad');
+    for (const m of a.metrics) lines.push([tl(m.label), num(m.value), num(m.sd), m.n == null ? '' : m.n, m.unit, m.ref ? tl(m.ref.text) : '', m.eval || '', m.rel || ''].join(';'));
     saveFile(new Blob(['﻿' + lines.join('\n')], { type: 'text/csv;charset=utf-8' }), `MotionClin_datos_${(p.name || 'paciente').replace(/[^\wáéíóúñü]+/gi, '_')}_${a.type}_${a.date.slice(0, 10)}.csv`);
   }
 
@@ -641,17 +643,20 @@
       </div>
       ${a.flags.length ? `<h4>Puntos a revisar</h4>${a.flags.map((f) => `<div class="warnline">• ${esc(f)}</div>`).join('')}` : ''}
       <h4>Valoración profesional</h4>
-      <textarea id="rep-notes" aria-label="Valoración profesional">${esc(a.notes || a.interpretation)}</textarea>
+      <textarea id="rep-notes" aria-label="Valoración profesional">${esc(a.notes || interp(a))}</textarea>
+      <h4>Mensaje para el paciente</h4>
+      <textarea id="rep-pnote" aria-label="Mensaje para el paciente" placeholder="Aparece en el PDF para el paciente. Si lo dejas vacío se usa un mensaje automático según el semáforo.">${esc(a.patientNote || '')}</textarea>
       <p class="meta" style="font-size:11px;margin-top:10px">El PDF incluye la tabla completa con referencias y fiabilidad, las gráficas, la comparación estadística con la sesión anterior${hist.length > 2 ? ', la tendencia entre sesiones' : ''}, el método y la bibliografía.</p>
     </div>`;
     const spec = mainChartSpec(a, null, { L: '#0f9e8f', R: '#d98a00', band: 'rgba(24,120,214,.12)', blue: '#1878d6' });
     const cbox = $('#rep-chart'), cv = document.createElement('canvas'); cbox.appendChild(cv);
     window.MCCharts.lineChart(cv, Object.assign({ width: Math.max(260, cbox.clientWidth), height: 200, theme: { bg: '#f8fbff', fg: '#10233b', muted: '#5b6e85', grid: '#e3eaf3' } }, spec.opts));
     $('#rep-notes').addEventListener('change', async (e) => { a.notes = e.target.value; await S.put('analyses', a); toast('Valoración guardada'); });
+    $('#rep-pnote').addEventListener('change', async (e) => { a.patientNote = e.target.value; await S.put('analyses', a); toast('Mensaje guardado'); });
   }
   async function downloadReport() {
     const a = currentReportAnalysis(); if (!a) return;
-    const ta = $('#rep-notes'); if (ta && ta.value !== (a.notes || a.interpretation)) { a.notes = ta.value; await S.put('analyses', a); }
+    const ta = $('#rep-notes'); if (ta && ta.value !== (a.notes || interp(a))) { a.notes = ta.value; await S.put('analyses', a); }
     const btn = $('#rep-download'); btn.disabled = true; btn.textContent = 'Generando…';
     try {
       const p = patientById(a.patientId), hist = sessionsOf(a.patientId, a.type);
@@ -660,6 +665,19 @@
       await saveFile(doc.output('blob'), name);
     } catch (e) { console.error(e); toast('No se ha podido generar el PDF: ' + e.message, true); }
     finally { btn.disabled = false; btn.textContent = 'Descargar PDF'; }
+  }
+
+  async function downloadPatientReport() {
+    const a = currentReportAnalysis(); if (!a) return;
+    const ta = $('#rep-pnote'); if (ta && ta.value !== (a.patientNote || '')) { a.patientNote = ta.value; await S.put('analyses', a); }
+    const btn = $('#rep-patient'); btn.disabled = true; btn.textContent = 'Generando…';
+    try {
+      const p = patientById(a.patientId), hist = sessionsOf(a.patientId, a.type), lang = window.MCI18n ? window.MCI18n.lang : 'es';
+      const doc = await window.MCPatientReport.build({ analysis: a, patient: p, clinic: state.clinic, history: hist, progressSpec, lang });
+      const who = (p ? p.name : 'paciente').replace(/[^\wáéíóúñü]+/gi, '_');
+      await saveFile(doc.output('blob'), `MotionClin_${lang === 'en' ? 'patient' : 'paciente'}_${who}_${a.date.slice(0, 10)}.pdf`);
+    } catch (e) { console.error(e); toast('No se ha podido generar el PDF: ' + e.message, true); }
+    finally { btn.disabled = false; btn.textContent = 'PDF para el paciente'; }
   }
 
   // ======================= comparador antes / después =======================
@@ -883,6 +901,7 @@
 
     $('#rep-select').addEventListener('change', renderReportPreview);
     $('#rep-download').onclick = downloadReport;
+    $('#rep-patient').onclick = downloadPatientReport;
 
     $('#st-save').onclick = async () => {
       Object.assign(state.clinic, { name: $('#st-name').value.trim(), physio: $('#st-physio').value.trim(), contact: $('#st-contact').value.trim() });

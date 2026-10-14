@@ -107,6 +107,10 @@ Hay un ejemplo real completo en [`examples/datos/marcha-lateral.analisis.json`](
 
 **Canvas propio para las gráficas.** Las mismas funciones dibujan en pantalla (tema oscuro, cursores sincronizados) y en el PDF (tema claro, alta resolución). Una librería de gráficas habría duplicado ese trabajo y añadido peso.
 
+**Traducir al mostrar, no al calcular.** El motor y la app escriben en español y `js/i18n.js` traduce lo que se muestra: el DOM (también lo que se pinta después, con un `MutationObserver`), el texto de los canvas (envolviendo `fillText`) y los PDF. El diccionario se indexa por plantilla, con los números sustituidos por `#`, así que «Sesión 3 de 5» y «Sesión 1 de 2» son una sola entrada, y unas pocas reglas cubren los textos compuestos (alertas, interpretación, fechas). Ventajas: los análisis guardados se ven en cualquier idioma sin recalcularse, el motor no se toca y añadir un idioma es añadir un diccionario. Para no dejar textos sin traducir, una prueba recorre todas las vistas de la app en inglés y lista lo que queda en español.
+
+**Dos informes, dos lectores.** El informe clínico es para el fisioterapeuta (tabla completa, estadística, método). El del paciente usa los mismos resultados pero en una página: nombres llanos, un semáforo (verde dentro del rango; ámbar fuera hasta medio rango; rojo más allá) y una escala visual por variable. No muestra variables de fiabilidad baja ni valores sin referencia como si fueran un problema.
+
 ## Estrategia de pruebas
 
 | Nivel | Archivo | Qué comprueba |
