@@ -92,6 +92,17 @@ Los tres pacientes de la demo son ficticios. Su movimiento lo genera un simulado
 | **Exportar** | CSV con series filtradas, eventos y ciclos para análisis propios; copia de seguridad en JSON. |
 | **Trabajar sin conexión** | Se instala como app; el modelo de visión queda guardado en el dispositivo. |
 
+<table>
+<tr>
+<td width="62%"><img src="docs/img/panel.png" alt="Panel clínico: indicadores, evolución de la velocidad de marcha por sesión y último análisis"></td>
+<td width="38%"><img src="docs/img/paciente.png" alt="Informe para el paciente: velocidad al caminar en rojo, escala visual y resultados con semáforo"></td>
+</tr>
+<tr>
+<td align="center"><sub><b>Panel clínico</b>: indicadores, evolución por sesión y último análisis</sub></td>
+<td align="center"><sub><b>Informe para el paciente</b>: semáforo y escala visual</sub></td>
+</tr>
+</table>
+
 <div align="center">
 <img src="docs/img/fases.png" alt="Tira de fases de la marcha: contacto inicial, respuesta a la carga, apoyo medio, despegue y oscilación media, con el ángulo de cada rodilla" width="88%">
 </div>

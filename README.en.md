@@ -60,6 +60,17 @@ What makes it more than a pose-detection demo:
 
 No frameworks and no server: apart from MediaPipe (body landmark detection) and jsPDF (PDF drawing), all the code is in this repository and reads exactly as it runs.
 
+<table>
+<tr>
+<td width="62%"><img src="docs/img/panel-en.png" alt="Clinical dashboard in English"></td>
+<td width="38%"><img src="docs/img/paciente.png" alt="Patient report with traffic lights and visual scales (Spanish example)"></td>
+</tr>
+<tr>
+<td align="center"><sub><b>Clinical dashboard</b></sub></td>
+<td align="center"><sub><b>Patient report</b>: traffic lights and visual scales</sub></td>
+</tr>
+</table>
+
 <div align="center"><img src="docs/img/informes.png" alt="First page of four PDF reports: clinical with real video, ACL follow-up, patient report and clinical report in English" width="100%"></div>
 
 ## Example clinical cases
