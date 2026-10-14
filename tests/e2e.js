@@ -11,14 +11,14 @@ const fs = require('fs'), path = require('path');
   page.on('console', (m) => { if (m.type() === 'error') errors.push(m.text()); });
   page.on('pageerror', (e) => errors.push(e.message));
 
-  await page.goto('http://localhost:8765/' + (process.env.PAGE || 'index.html') + '');
+  await page.goto((process.env.BASE || 'http://localhost:8765/') + (process.env.PAGE || 'index.html') + '');
   await page.waitForFunction(() => document.querySelectorAll('#kpis .kpi').length === 4);
   await page.waitForTimeout(800);
   await page.screenshot({ path: path.join(out, '1_panel.png'), fullPage: true });
   console.log('Panel OK · KPIs:', await page.$$eval('#kpis .value', (e) => e.map((x) => x.textContent)));
 
   // Crear paciente real
-  await page.goto('http://localhost:8765/' + (process.env.PAGE || 'index.html') + '#pacientes');
+  await page.goto((process.env.BASE || 'http://localhost:8765/') + (process.env.PAGE || 'index.html') + '#pacientes');
   await page.click('#btn-add-patient');
   await page.fill('#pf-name', 'Paciente Prueba');
   await page.fill('#pf-height', '165');
@@ -29,7 +29,7 @@ const fs = require('fs'), path = require('path');
   await page.waitForSelector('#patient-detail:not([hidden])');
 
   // Analizar vídeo
-  await page.goto('http://localhost:8765/' + (process.env.PAGE || 'index.html') + '#analisis');
+  await page.goto((process.env.BASE || 'http://localhost:8765/') + (process.env.PAGE || 'index.html') + '#analisis');
   await page.waitForSelector('#an-patient option', { state: 'attached' });
   const pid = await page.evaluate(() => window.MCApp.state.patients.find((p) => p.name === 'Paciente Prueba').id);
   await page.selectOption('#an-patient', pid);
@@ -39,35 +39,41 @@ const fs = require('fs'), path = require('path');
   await page.waitForSelector('#an-result:not([hidden])', { timeout: 240000 });
   console.log(`Análisis completado en ${((Date.now() - t0) / 1000).toFixed(1)} s`);
   console.log('Estado:', await page.textContent('#an-status'));
-  console.log('Resumen:', (await page.textContent('#res-summary')).replace(/\s+/g, ' ').trim());
-  const rows = await page.$$eval('#res-table tbody tr', (els) => els.map((e) => [...e.children].map((c) => c.textContent.trim()).filter(Boolean).join(' | ')));
+  console.log('Resumen:', (await page.textContent('#an-result .summary')).replace(/\s+/g, ' ').trim());
+  const rows = await page.$$eval('#an-result .mtable tbody tr', (els) => els.map((e) => [...e.children].map((c) => c.textContent.trim()).filter(Boolean).join(' | ')));
   console.log('Tabla:\n  ' + rows.join('\n  '));
-  console.log('Alertas:\n  ' + (await page.$$eval('#res-flags li', (e) => e.map((x) => x.textContent))).join('\n  '));
+  console.log('Alertas:\n  ' + (await page.$$eval('#an-result .flags li', (e) => e.map((x) => x.textContent))).join('\n  '));
   await page.screenshot({ path: path.join(out, '2_analisis.png'), fullPage: true });
 
   // Segunda sesión con el mismo vídeo: la comparación no debe mostrar cambios relevantes
   if (process.env.SECOND) {
-    await page.click('#res-new'); await page.click('#an-run');
+    await page.click('#an-result .d-new'); await page.click('#an-run');
     await page.waitForFunction(() => window.MCApp.state.analyses.filter((a) => !a.demo).length >= 2, null, { timeout: 400000 });
     await page.waitForSelector('#an-result:not([hidden])');
-    console.log('Comparación:', (await page.textContent('#res-compare')).replace(/\s+/g, ' ').trim().slice(0, 400));
+    console.log('Comparación:', (await page.textContent('#an-result .detail .card:nth-child(2), #an-result')).replace(/\s+/g, ' ').trim().slice(0, 400));
   }
   // Informe y PDF
-  await page.click('#res-report');
+  await page.click('#an-result a[href^="#informe-"]');
   await page.waitForSelector('.paper');
   await page.screenshot({ path: path.join(out, '3_informe.png'), fullPage: true });
   const [dl] = await Promise.all([page.waitForEvent('download'), page.click('#rep-download')]);
   const pdfPath = path.join(out, dl.suggestedFilename()); await dl.saveAs(pdfPath);
   console.log('PDF:', pdfPath, fs.statSync(pdfPath).size, 'bytes');
 
+  // Reproductor de la sesión y comparador
+  await page.goto((process.env.BASE || 'http://localhost:8765/') + (process.env.PAGE || 'index.html') + '#sesion-demo-a4'); await page.waitForTimeout(500);
+  await page.click('.d-player .pl-play'); await page.waitForTimeout(800); await page.click('.d-player .pl-play');
+  console.log('Reproductor:', await page.textContent('.d-player .pl-time'));
+  await page.goto((process.env.BASE || 'http://localhost:8765/') + (process.env.PAGE || 'index.html') + '#comparar-demo-a0~demo-a4'); await page.waitForTimeout(500);
+  console.log('Comparador:', (await page.textContent('#cmp-body .summary')).replace(/\s+/g, ' ').trim());
   // Método
   await page.click('.nav a[data-view=metodo]'); await page.waitForTimeout(300);
   await page.screenshot({ path: path.join(out, '5_metodo.png'), fullPage: true });
   // Ficha del paciente de ejemplo con tendencia
-  await page.goto('http://localhost:8765/' + (process.env.PAGE || 'index.html') + '#pacientes-demo-p1'); await page.waitForTimeout(500);
+  await page.goto((process.env.BASE || 'http://localhost:8765/') + (process.env.PAGE || 'index.html') + '#pacientes-demo-p1'); await page.waitForTimeout(500);
   await page.screenshot({ path: path.join(out, '6_paciente.png'), fullPage: true });
   // CSV
-  await page.goto('http://localhost:8765/' + (process.env.PAGE || 'index.html') + '#panel');
+  await page.goto((process.env.BASE || 'http://localhost:8765/') + (process.env.PAGE || 'index.html') + '#panel');
   const [dl2] = await Promise.all([page.waitForEvent('download'), page.click('#btn-csv')]);
   const csvPath = path.join(out, dl2.suggestedFilename()); await dl2.saveAs(csvPath);
   console.log('CSV:', csvPath, fs.readFileSync(csvPath, 'utf8').split('\n').length - 1, 'filas');
@@ -80,7 +86,7 @@ const fs = require('fs'), path = require('path');
 
   // Móvil
   await page.setViewportSize({ width: 400, height: 860 });
-  await page.goto('http://localhost:8765/' + (process.env.PAGE || 'index.html') + '#panel'); await page.waitForTimeout(600);
+  await page.goto((process.env.BASE || 'http://localhost:8765/') + (process.env.PAGE || 'index.html') + '#panel'); await page.waitForTimeout(600);
   const overflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
   await page.screenshot({ path: path.join(out, '4_movil.png'), fullPage: false });
   console.log('Desbordamiento horizontal en móvil:', overflow);

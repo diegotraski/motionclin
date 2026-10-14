@@ -173,7 +173,8 @@
     const dts = ts.slice(1).map((t, i) => t - ts[i]).filter((d) => d > 0);
     const mdt = median(dts) || 1 / 15;
     const uniform = dts.every((d) => Math.abs(d - mdt) < 0.1 * mdt);
-    const fsRaw = 1 / mdt;
+    // frecuencia media exacta (evita el sesgo de la mediana cuando los tiempos están redondeados)
+    const fsRaw = frames.length > 1 && ts[ts.length - 1] > ts[0] ? (frames.length - 1) / (ts[ts.length - 1] - ts[0]) : 1 / mdt;
     if (uniform) return { frames, fs: fsRaw };
     const fs = clamp(Math.round(fsRaw), 10, 60), out = [];
     let j = 0;
@@ -203,6 +204,13 @@
         if (cross < 0.5 * same && same - cross > 0.04) { for (const [l, r] of pairs) { const tmp = f.lm[l]; f.lm[l] = f.lm[r]; f.lm[r] = tmp; } swaps++; }
       }
       p2 = p1; p1 = f.lm;
+    }
+    // Si se ha «corregido» más de la mitad de los fotogramas, la referencia inicial era la intercambiada:
+    // se invierte todo para respetar la etiqueta que el modelo da en la mayoría de fotogramas.
+    const valid = out.filter((f) => f.lm).length;
+    if (swaps > valid / 2) {
+      for (const f of out) if (f.lm) for (const [l, r] of pairs) { const tmp = f.lm[l]; f.lm[l] = f.lm[r]; f.lm[r] = tmp; }
+      swaps = valid - swaps;
     }
     return { frames: out, swaps };
   }

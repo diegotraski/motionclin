@@ -11,6 +11,13 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600&family=Sora:wght@500;600;700&display=swap">
 <link rel="stylesheet" href="css/app.css">
 <!--MC:HEAD-END-->
+<link rel="manifest" href="manifest.webmanifest">
+<meta name="theme-color" content="#07111f">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<meta name="description" content="Análisis biomecánico por vídeo para fisioterapia: marcha, sentadilla, levantarse de la silla y equilibrio con IA en el navegador, con referencias publicadas y estadística entre sesiones.">
+<meta property="og:title" content="MotionClin · Análisis biomecánico por vídeo">
+<meta property="og:description" content="Del vídeo del móvil a un informe clínico, en el navegador. El vídeo no sale del dispositivo.">
+<meta property="og:image" content="https://diegotraski.github.io/motionclin/docs/panel.png">
 </head>
 <body>
 <div class="app">
@@ -20,6 +27,7 @@
       <a href="#panel" data-view="panel"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg><span>Panel</span></a>
       <a href="#analisis" data-view="analisis"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="6" width="13" height="12" rx="2"/><path d="m16 10 5-3v10l-5-3"/></svg><span>Nuevo análisis</span></a>
       <a href="#pacientes" data-view="pacientes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6"/></svg><span>Pacientes</span></a>
+      <a href="#comparar" data-view="comparar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="7" height="16" rx="1.5"/><rect x="14" y="4" width="7" height="16" rx="1.5"/><path d="M10 12h4"/></svg><span>Comparar</span></a>
       <a href="#informe" data-view="informe"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 3H6a1 1 0 0 0-1 1v16a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8z"/><path d="M14 3v5h5M8 13h8M8 17h5"/></svg><span>Informes</span></a>
       <a href="#metodo" data-view="metodo"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 3h6M10 3v6l-5 9a2 2 0 0 0 1.8 3h10.4a2 2 0 0 0 1.8-3l-5-9V3"/><path d="M7.5 14h9"/></svg><span>Método</span></a>
       <a href="#ajustes" data-view="ajustes"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></svg><span>Ajustes</span></a>
@@ -73,6 +81,10 @@
               <button class="chip" data-src="camera" aria-pressed="false">Cámara en directo</button>
             </div>
           </div>
+          <div class="sample-cta" id="sample-cta">
+            <div><b>¿No tienes un vídeo a mano?</b><span class="small">Analiza un clip real de marcha lateral (4,6 s) con un clic.</span></div>
+            <button class="btn" id="btn-sample">▶︎ Probar con vídeo de ejemplo</button>
+          </div>
           <div id="src-file">
             <label class="drop" id="drop" for="an-file">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 16V4m0 0-4 4m4-4 4 4M4 16v3a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1v-3"/></svg>
@@ -101,24 +113,7 @@
         <div class="status-line" id="an-status"></div>
       </div>
 
-      <div id="an-result" hidden>
-        <div class="card summary mt" id="res-summary"></div>
-        <div class="grid g2 mt">
-          <div class="card"><h3 id="res-chart-title">Curva</h3><div class="chart-box" id="res-chart"></div><div class="chart-box" id="res-chart2"></div><p class="small" id="res-chart-note"></p></div>
-          <div class="card" id="res-compare"></div>
-        </div>
-        <div class="card mt"><h3><span>Resultados</span><span class="small">media ± DE · n = ciclos, repeticiones o ventanas</span></h3><div class="table-wrap" id="res-table"></div></div>
-        <div class="grid g2e mt">
-          <div class="card"><h3>Alertas</h3><ul class="flags" id="res-flags"></ul></div>
-          <div class="card" id="res-quality"></div>
-        </div>
-        <div class="card mt" id="res-reps" hidden></div>
-        <details class="card mt method-box"><summary>Método y referencias de este análisis</summary><div id="res-methods"></div></details>
-        <div class="card mt form">
-          <div class="field"><label for="res-notes">Valoración profesional (se incluye en el informe; puedes editarla)</label><textarea id="res-notes"></textarea></div>
-          <div class="actions"><button class="btn primary" id="res-report">Ver informe y descargar PDF</button><a class="btn" href="#analisis" id="res-new">Analizar otro vídeo</a></div>
-        </div>
-      </div>
+      <div id="an-result" class="detail" hidden></div>
     </section>
 
     <!-- PACIENTES -->
@@ -142,6 +137,26 @@
         <div class="table-wrap"><table id="patient-table"></table></div>
       </div>
       <div id="patient-detail" hidden></div>
+    </section>
+
+    <!-- SESIÓN (detalle de un análisis guardado) -->
+    <section id="v-sesion" data-section="sesion" hidden>
+      <div class="top"><div><h2 id="ses-title">Análisis</h2><p id="ses-sub"></p></div><div class="actions"><a class="btn" id="ses-back" href="#panel">← Volver</a></div></div>
+      <div id="ses-detail" class="detail"></div>
+    </section>
+
+    <!-- COMPARAR -->
+    <section id="v-comparar" data-section="comparar" hidden>
+      <div class="top"><div><h2>Comparar sesiones</h2><p>Antes y después, lado a lado: movimiento sincronizado, curvas superpuestas y estadística del cambio.</p></div></div>
+      <div class="card form cmp-pick">
+        <div class="row">
+          <div class="field"><label for="cmp-patient">Paciente</label><select id="cmp-patient"></select></div>
+          <div class="field"><label for="cmp-type">Prueba</label><select id="cmp-type"></select></div>
+          <div class="field"><label for="cmp-a">Sesión A (antes)</label><select id="cmp-a"></select></div>
+          <div class="field"><label for="cmp-b">Sesión B (después)</label><select id="cmp-b"></select></div>
+        </div>
+      </div>
+      <div id="cmp-body"></div>
     </section>
 
     <!-- INFORME -->
@@ -209,7 +224,7 @@
           <h3>Datos y copia de seguridad</h3>
           <p class="small" id="st-storage"></p>
           <div class="actions"><button class="btn" id="st-export">Exportar copia (JSON)</button><label class="btn" for="st-import">Importar copia</label><input type="file" id="st-import" accept="application/json,.json" hidden></div>
-          <div class="actions"><button class="btn" id="st-demo">Cargar datos de ejemplo</button><button class="btn danger" id="st-wipe">Borrar todos los datos</button></div>
+          <div class="actions"><button class="btn" id="st-demo">Cargar datos de ejemplo</button><button class="btn" id="st-intro">Ver introducción</button><button class="btn danger" id="st-wipe">Borrar todos los datos</button></div>
           <div class="confirm" id="st-wipe-confirm" hidden>¿Seguro? Se borrarán pacientes, análisis y ajustes. <button class="btn sm danger" id="st-wipe-yes">Sí, borrar todo</button><button class="btn sm" id="st-wipe-no">Cancelar</button></div>
           <h3 class="mt">Cómo funciona</h3>
           <p class="small">MotionClin usa MediaPipe Pose (Google, Apache 2.0) para localizar 33 puntos del cuerpo en cada fotograma. Con ellos calcula ángulos articulares en 2D, cadencia, repeticiones, simetría y oscilación postural. Todo se ejecuta en el navegador: el vídeo no sale del equipo.</p>
@@ -221,6 +236,30 @@
 </div>
 <div class="toast" id="toast" role="status" hidden></div>
 
+<div class="modal-back" id="welcome" hidden>
+  <div class="modal" role="dialog" aria-modal="true" aria-labelledby="wl-title">
+    <div class="wl-hero">
+      <canvas id="wl-canvas" width="360" height="300" aria-hidden="true"></canvas>
+      <div>
+        <div class="eyebrow">Análisis biomecánico por vídeo</div>
+        <h2 id="wl-title">Del vídeo del móvil a un informe clínico, en el navegador</h2>
+        <p>MotionClin localiza 33 puntos del cuerpo con IA, calcula marcha, sentadilla, levantarse de la silla y equilibrio con métodos publicados, y compara sesiones con estadística.</p>
+      </div>
+    </div>
+    <ol class="wl-steps">
+      <li><b>Graba</b><span>Vídeo de 10–20 s con el móvil, cuerpo entero.</span></li>
+      <li><b>Analiza</b><span>Esqueleto, ángulos, eventos y métricas con su incertidumbre.</span></li>
+      <li><b>Decide</b><span>Referencias por edad, cambios significativos e informe PDF.</span></li>
+    </ol>
+    <p class="small wl-privacy">El vídeo no sale de tu equipo. Hay 3 pacientes ficticios cargados para explorar.</p>
+    <div class="actions">
+      <button class="btn primary" id="wl-sample">▶︎ Analizar un vídeo real de ejemplo</button>
+      <button class="btn" id="wl-explore">Explorar pacientes de ejemplo</button>
+      <a class="btn ghost" href="#metodo" id="wl-method">Cómo funciona</a>
+    </div>
+  </div>
+</div>
+
 <!--MC:SCRIPTS-START-->
 <script src="vendor/mediapipe-pose/pose.js"></script>
 <script src="vendor/jspdf/jspdf.umd.min.js"></script>
@@ -229,6 +268,8 @@
 <script src="js/charts.js"></script>
 <script src="js/pose.js"></script>
 <script src="js/report.js"></script>
+<script src="js/replay.js"></script>
+<script src="js/player.js"></script>
 <script src="js/synth.js"></script>
 <script src="js/demo.js"></script>
 <script src="js/app.js"></script>

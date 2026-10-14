@@ -1,0 +1,22 @@
+name: Pruebas
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  motor:
+    name: Motor de análisis
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Pruebas con valores conocidos
+        run: node tests/metrics.test.js
+      - name: Verificación con 30 sujetos simulados por prueba
+        run: node tests/validation.js | tee validacion.md
+      - name: Resumen
+        run: cat validacion.md >> "$GITHUB_STEP_SUMMARY"

@@ -38,6 +38,7 @@
     if (y1 === y0) { y0 -= 5; y1 += 5; }
     const ys = niceStep(y1 - y0, 4); y0 = Math.floor(y0 / ys) * ys; y1 = Math.ceil(y1 / ys) * ys;
     const X = (x) => pad.l + ((x - x0) / (x1 - x0)) * (W - pad.l - pad.r);
+    canvas.mcScale = { x0, x1, l: pad.l, r: pad.r, W, H, t: pad.t, h: H - pad.t - pad.b };
     const Y = (y) => H - pad.b - ((y - y0) / (y1 - y0)) * (H - pad.t - pad.b);
 
     ctx.font = `11px ${font}`; ctx.lineWidth = 1;

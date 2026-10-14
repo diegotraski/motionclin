@@ -8,7 +8,7 @@
   const engine = new window.MCPose.PoseEngine(POSE_BASE);
   const FPS = { gait: 30, squat: 20, sts: 20, balance: 20 };
 
-  const state = { patients: [], analyses: [], clinic: {}, type: 'gait', src: 'file', file: null, current: null, abort: null, live: null };
+  const state = { patients: [], analyses: [], clinic: {}, type: 'gait', src: 'file', file: null, current: null, abort: null, live: null, videos: {}, players: [] };
 
   // ---------- utilidades ----------
   const esc = (s) => String(s == null ? '' : s).replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
@@ -64,7 +64,7 @@
     [state.patients, state.analyses] = await Promise.all([S.all('patients'), S.all('analyses')]);
     state.clinic = await S.setting('clinic', { name: 'Clínica Motion Fisio', physio: '', contact: '', logo: null });
     const seeded = await S.setting('seeded', false);
-    const oldDemo = state.analyses.some((a) => a.demo && a.version !== 2);
+    const oldDemo = state.analyses.some((a) => a.demo && (a.version !== 2 || !a.replay) && a.patientId !== 'sample-p');
     if (oldDemo) await clearDemo(true);
     if ((!seeded && !state.patients.length) || oldDemo) { await loadDemo(); await S.setSetting('seeded', true); }
   }
@@ -76,7 +76,7 @@
   }
 
   // ---------- navegación ----------
-  const VIEWS = ['panel', 'analisis', 'pacientes', 'informe', 'metodo', 'ajustes'];
+  const VIEWS = ['panel', 'analisis', 'pacientes', 'sesion', 'comparar', 'informe', 'metodo', 'ajustes'];
   function route() {
     const h = (location.hash || '#panel').slice(1), cut = h.indexOf('-');
     const view = cut < 0 ? h : h.slice(0, cut), arg = cut < 0 ? null : h.slice(cut + 1);
@@ -84,6 +84,9 @@
     $$('[data-section]').forEach((s) => (s.hidden = s.dataset.section !== v));
     $$('.nav a').forEach((a) => a.classList.toggle('active', a.dataset.view === v));
     if (v !== 'analisis' && state.live) stopCamera();
+    destroyPlayers(); if (v !== 'analisis') $('#an-result').hidden = true;
+    if (v === 'pacientes' || v === 'comparar') $$('.nav a').forEach((a) => a.classList.toggle('active', a.dataset.view === v));
+    if (v === 'sesion') $$('.nav a').forEach((a) => a.classList.toggle('active', a.dataset.view === 'pacientes'));
     render[v](arg);
     window.scrollTo(0, 0);
   }
@@ -101,8 +104,8 @@
     return html + '</tbody></table>';
   }
 
-  function compareHTML(a) {
-    const prev = prevOf(a);
+  function compareHTML(a) { return comparePairHTML(prevOf(a), a); }
+  function comparePairHTML(prev, a, title) {
     if (!prev) return '<h3>Comparación con la sesión anterior</h3><p class="small">Es la primera sesión de esta prueba. Cuando haya una segunda, aquí verás si los cambios son estadísticamente significativos y clínicamente relevantes.</p>';
     if (prev.version !== 2 || a.version !== 2) return '<h3>Comparación con la sesión anterior</h3><p class="small">La sesión anterior se analizó con una versión antigua sin datos por ciclo; no se puede comparar estadísticamente.</p>';
     const cmp = MM.compare(prev, a);
@@ -111,7 +114,7 @@
       const d = Math.round(c.diff * 100) / 100;
       return `<tr><td>${esc(c.label)}</td><td class="num">${d > 0 ? '+' : ''}${dec(d)}${unitSep(c.unit)}${esc(c.unit)}</td><td class="num">${fmtP(c.p)}</td><td class="num">${c.d != null ? dec(c.d.toFixed(1)) : '–'}</td><td>${v}</td></tr>`;
     }).join('');
-    return `<h3><span>Comparación con la sesión anterior</span><span class="small">${fmtDate(prev.date)}</span></h3>
+    return `<h3><span>${title || 'Comparación con la sesión anterior'}</span><span class="small">${fmtDate(prev.date)} → ${fmtDate(a.date)}</span></h3>
       ${cmp.length ? `<div class="table-wrap"><table class="cmp"><thead><tr><th>Parámetro</th><th>Δ</th><th>p</th><th>d</th><th></th></tr></thead><tbody>${rows}</tbody></table></div>
       <p class="small" style="margin-top:8px">p: prueba t de Welch entre ciclos de ambas sesiones. d: tamaño del efecto (Cohen). «Mejora» o «Empeora» exige p &lt; 0,05 y superar el cambio mínimo relevante de la variable.</p>` : '<p class="small">No hay suficientes ciclos o repeticiones en ambas sesiones para comparar.</p>'}`;
   }
@@ -228,12 +231,12 @@
           ${last.keyframe ? `<img src="${last.keyframe}" alt="Fotograma con esqueleto" style="border-radius:10px;margin:12px 0 8px;aspect-ratio:16/9;object-fit:cover;width:100%">` : ''}
           <p style="margin:6px 0 2px"><span class="small">${esc(last.main.label)}:</span> <b class="num">${esc(fmtValSd(last.main))}</b></p>
           <p class="small" style="margin:2px 0 12px">${esc(last.flags[0] || 'Sin alertas.')}</p>
-          <a class="btn primary" href="#informe-${last.id}">Abrir informe</a>`;
+          <a class="btn primary" href="#sesion-${last.id}">Ver análisis</a>`;
       })() : `<div class="empty-state"><h3>Aún no hay análisis</h3><p>Sube el primer vídeo para ver aquí el resultado.</p><a class="btn primary" href="#analisis">Nuevo análisis</a></div>`;
 
       $('#recent-table').innerHTML = all.length ? `<thead><tr><th>Paciente</th><th>Prueba</th><th>Fecha</th><th>Métrica principal</th><th>Calidad</th><th>Estado</th></tr></thead><tbody>` +
         all.slice(0, 10).map((a) => { const p = patientById(a.patientId) || { name: '—' };
-          return `<tr class="click" data-href="#informe-${a.id}"><td>${esc(p.name)}${p.demo ? '<span class="tag">Ejemplo</span>' : ''}</td><td>${TYPE[a.type]}</td><td class="num">${fmtDate(a.date)}</td><td>${esc(a.main.label)}: <b class="num">${esc(fmtValSd(a.main))}</b></td><td class="num">${a.quality.score} %</td><td>${statusPill(a)}</td></tr>`; }).join('') + '</tbody>'
+          return `<tr class="click" data-href="#sesion-${a.id}"><td>${esc(p.name)}${p.demo ? '<span class="tag">Ejemplo</span>' : ''}</td><td>${TYPE[a.type]}</td><td class="num">${fmtDate(a.date)}</td><td>${esc(a.main.label)}: <b class="num">${esc(fmtValSd(a.main))}</b></td><td class="num">${a.quality.score} %</td><td>${statusPill(a)}</td></tr>`; }).join('') + '</tbody>'
         : '<tbody><tr><td class="small">Sin análisis todavía.</td></tr></tbody>';
     },
 
@@ -254,6 +257,18 @@
       $('#rep-download').disabled = !all.length;
       renderReportPreview();
     },
+
+    sesion(id) {
+      const a = state.analyses.find((x) => x.id === id);
+      if (!a) { $('#ses-title').textContent = 'Análisis no encontrado'; $('#ses-sub').textContent = ''; $('#ses-detail').innerHTML = '<div class="card empty-state"><h3>No existe este análisis</h3><p>Puede que se haya borrado.</p></div>'; return; }
+      const p = patientById(a.patientId) || { name: '—' };
+      $('#ses-title').textContent = `${TYPE[a.type]} · ${p.name}`;
+      $('#ses-sub').textContent = `${fmtDate(a.date)} · vista ${a.view} · ${a.source || ''}`;
+      $('#ses-back').href = '#pacientes-' + a.patientId; $('#ses-back').textContent = '← Ficha de ' + p.name.split(' ')[0];
+      mountDetail($('#ses-detail'), a, { videoURL: state.videos[a.id] });
+    },
+
+    comparar(arg) { renderCompare(arg); },
 
     metodo() {
       $('#method-refs').innerHTML = Object.values(MM.REFS).sort().map((r) => `<li>${esc(r)}</li>`).join('');
@@ -315,13 +330,13 @@
     box.innerHTML = `
       <div class="card"><div class="top" style="margin:0">
         <div class="person"><div class="avatar">${initials(p.name)}</div><div><h3 style="font-size:20px">${esc(p.name)}${p.demo ? '<span class="tag">Ejemplo</span>' : ''}</h3><div class="small">${[age ? age + ' años' : null, p.sex === 'F' ? 'mujer' : p.sex === 'M' ? 'hombre' : null, p.heightCm ? p.heightCm + ' cm' : null, p.condition].filter(Boolean).map(esc).join(' · ') || 'Sin datos clínicos'}</div></div></div>
-        <div class="actions"><a class="btn" href="#pacientes">← Volver</a><button class="btn" id="pd-edit">Editar</button><button class="btn primary" id="pd-new">+ Nuevo análisis</button><button class="btn danger" id="pd-del">Eliminar</button></div>
+        <div class="actions"><a class="btn" href="#pacientes">← Volver</a>${(() => { const t = ['gait', 'squat', 'sts', 'balance'].find((t2) => sessionsOf(p.id, t2).length >= 2); if (!t) return ''; const ss = sessionsOf(p.id, t); return `<a class="btn" href="#comparar-${ss[0].id}~${ss[ss.length - 1].id}">Comparar primera y última</a>`; })()}<button class="btn" id="pd-edit">Editar</button><button class="btn primary" id="pd-new">+ Nuevo análisis</button><button class="btn danger" id="pd-del">Eliminar</button></div>
       </div>
       <div class="confirm" id="pd-del-confirm" hidden style="margin-top:10px">¿Eliminar a ${esc(p.name)} y sus ${all.length} análisis? <button class="btn sm danger" id="pd-del-yes">Sí, eliminar</button><button class="btn sm" id="pd-del-no">Cancelar</button></div>
       ${!p.heightCm || !p.birthYear ? '<p class="small" style="margin:10px 0 0;color:var(--warn)">Indica la talla y el año de nacimiento para obtener velocidades en m/s y valores de referencia por edad.</p>' : ''}
       ${p.notes ? `<p class="small" style="margin:10px 0 0">${esc(p.notes)}</p>` : ''}</div>
       ${types.length ? `<div class="grid ${types.length > 1 ? 'g2e' : ''} mt">${types.map((t) => `<div class="card"><h3>${TYPE[t]} · ${esc(sessionsOf(p.id, t)[0].main.label)}</h3><div class="chart-box" data-prog="${t}"></div><p class="small" data-trend="${t}"></p></div>`).join('')}</div>` : ''}
-      <div class="card mt"><h3>Sesiones</h3><div class="table-wrap"><table>${all.length ? '<thead><tr><th>Fecha</th><th>Prueba</th><th>Métrica principal</th><th>Calidad</th><th>Estado</th><th></th></tr></thead><tbody>' + all.slice().reverse().map((a) => `<tr><td class="num">${fmtDate(a.date)}</td><td>${TYPE[a.type]}</td><td class="num">${esc(fmtValSd(a.main))}</td><td class="num">${a.quality.score} %</td><td>${statusPill(a)}</td><td style="text-align:right;white-space:nowrap"><a class="btn sm" href="#informe-${a.id}">Informe</a> <button class="btn sm ghost danger" data-del-an="${a.id}">Borrar</button></td></tr>`).join('') + '</tbody>' : '<tbody><tr><td class="small">Sin análisis. Pulsa «Nuevo análisis» para grabar o subir un vídeo.</td></tr></tbody>'}</table></div></div>`;
+      <div class="card mt"><h3>Sesiones</h3><div class="table-wrap"><table>${all.length ? '<thead><tr><th>Fecha</th><th>Prueba</th><th>Métrica principal</th><th>Calidad</th><th>Estado</th><th></th></tr></thead><tbody>' + all.slice().reverse().map((a) => `<tr><td class="num">${fmtDate(a.date)}</td><td>${TYPE[a.type]}</td><td class="num">${esc(fmtValSd(a.main))}</td><td class="num">${a.quality.score} %</td><td>${statusPill(a)}</td><td style="text-align:right;white-space:nowrap"><a class="btn sm primary" href="#sesion-${a.id}">Ver</a> <a class="btn sm" href="#informe-${a.id}">Informe</a> <button class="btn sm ghost danger" data-del-an="${a.id}">Borrar</button></td></tr>`).join('') + '</tbody>' : '<tbody><tr><td class="small">Sin análisis. Pulsa «Nuevo análisis» para grabar o subir un vídeo.</td></tr></tbody>'}</table></div></div>`;
     $$('[data-prog]', box).forEach((el) => {
       const ss = sessionsOf(p.id, el.dataset.prog), spec = progressSpec(ss), c = document.createElement('canvas'); el.appendChild(c);
       window.MCCharts.lineChart(c, Object.assign({ width: Math.max(260, el.clientWidth), height: 200, theme: theme() }, spec));
@@ -440,27 +455,110 @@
     const meta = Object.assign({}, out.meta, { patient: { age: ageOf(patient), sex: patient.sex, heightCm: patient.heightCm }, model: +$('#an-precision').value === 1 ? 'Full' : 'Lite' });
     const res = MM.analyze(state.type, out.frames, meta);
     const a = Object.assign(res, { id: uid(), patientId: patient.id, date: new Date().toISOString(), source, keyframe, notes: '', duration: out.meta.duration });
+    try { a.replay = window.MCReplay.encode(out.frames, { width: out.meta.width, height: out.meta.height }); } catch (e) { console.warn('No se pudo guardar la secuencia', e); }
+    if (source !== 'Cámara en directo' && state.file) state.videos[a.id] = URL.createObjectURL(state.file);
     await S.put('analyses', a); state.analyses.push(a); state.current = a;
     $('#an-status').textContent = `Análisis guardado en la ficha de ${patient.name}: ${out.frames.length} fotogramas, vista ${a.view}.`;
     showResult(a);
     toast('Análisis completado y guardado');
   }
 
-  function showResult(a) {
-    $('#an-result').hidden = false;
-    $('#res-summary').innerHTML = summaryHTML(a);
-    $('#res-table').innerHTML = metricTableHTML(a);
-    $('#res-flags').innerHTML = flagsHTML(a);
-    $('#res-quality').innerHTML = qualityHTML(a);
-    $('#res-compare').innerHTML = compareHTML(a);
-    $('#res-methods').innerHTML = methodsHTML(a);
-    const reps = repsHTML(a); $('#res-reps').hidden = !reps; $('#res-reps').innerHTML = reps;
+  // ======================= detalle de un análisis (resultado nuevo o sesión guardada) =======================
+  function destroyPlayers() { state.players.forEach((pl) => pl.destroy()); state.players = []; }
+
+  function detailHTML(a, opts) {
+    const first = firstOf(a);
+    const reps = repsHTML(a);
+    return `
+      <div class="card summary">${summaryHTML(a)}</div>
+      <div class="card mt"><h3><span>Revisión del movimiento</span><span class="small">${opts.videoURL ? 'Vídeo de esta sesión con el esqueleto detectado' : 'Esqueleto reconstruido con los puntos guardados (el vídeo no se guarda)'}</span></h3>
+        <div class="d-player"></div>
+        <p class="small" style="margin:8px 0 0">Espacio: reproducir o pausar · ← →: fotograma a fotograma · pulsa en la línea de tiempo o en la gráfica para saltar a ese instante.${a.type === 'gait' ? ' Barras de la línea de tiempo: fase de apoyo de cada pierna; huecos: oscilación.' : ''}</p></div>
+      <div class="grid g2 mt">
+        <div class="card"><h3 class="d-chart-title"></h3><div class="chart-box d-chart"></div><div class="chart-box d-chart2"></div><p class="small d-chart-note"></p></div>
+        <div class="card">${compareHTML(a)}${first ? `<div class="actions" style="margin-top:12px"><a class="btn sm" href="#comparar-${first.id}~${a.id}">Comparar con la primera sesión, lado a lado →</a></div>` : ''}</div>
+      </div>
+      <div class="card mt"><h3><span>Resultados</span><span class="small">media ± DE · n = ciclos, repeticiones o ventanas</span></h3><div class="table-wrap">${metricTableHTML(a)}</div></div>
+      <div class="grid g2e mt">
+        <div class="card"><h3>Alertas</h3><ul class="flags">${flagsHTML(a)}</ul></div>
+        <div class="card">${qualityHTML(a)}</div>
+      </div>
+      ${reps ? `<div class="card mt">${reps}</div>` : ''}
+      <details class="card mt method-box"><summary>Método y referencias de este análisis</summary>${methodsHTML(a)}</details>
+      <div class="card mt form">
+        <div class="field"><label for="notes-${a.id}">Valoración profesional (se incluye en el informe; puedes editarla)</label><textarea id="notes-${a.id}" class="d-notes"></textarea></div>
+        <div class="actions"><a class="btn primary" href="#informe-${a.id}">Ver informe PDF</a><button class="btn d-csv">Descargar datos del análisis (CSV)</button>${opts.fresh ? '<button class="btn d-new">Analizar otro vídeo</button>' : ''}</div>
+      </div>`;
+  }
+
+  // Cursor sincronizado sobre una gráfica (línea vertical que sigue al reproductor)
+  function addCursor(box) {
+    let el = box.querySelector('.chart-cursor');
+    if (!el) { el = document.createElement('div'); el.className = 'chart-cursor'; box.style.position = 'relative'; box.appendChild(el); }
+    return (x) => { const cv = box.querySelector('canvas'); if (!cv || !cv.mcScale || x == null) { el.hidden = true; return; } const sc = cv.mcScale; const px = sc.l + ((x - sc.x0) / (sc.x1 - sc.x0)) * (sc.W - sc.l - sc.r), kx = cv.clientWidth / sc.W, ky = cv.clientHeight / sc.H; el.hidden = px < sc.l - 1 || px > sc.W - sc.r + 1; el.style.left = cv.offsetLeft + px * kx + 'px'; el.style.top = cv.offsetTop + sc.t * ky + 'px'; el.style.height = sc.h * ky + 'px'; };
+  }
+  const chartXAt = (cv, clientX) => { const sc = cv.mcScale; if (!sc) return null; const r = cv.getBoundingClientRect(); const px = ((clientX - r.left) / r.width) * sc.W; return sc.x0 + ((px - sc.l) / (sc.W - sc.l - sc.r)) * (sc.x1 - sc.x0); };
+  // zancada (lado izquierdo, o derecho si no hay) que contiene el instante t
+  function strideAt(a, t) {
+    const ev = a.events || {}; const hs = (ev.hsL && ev.hsL.length > 1 ? ev.hsL : ev.hsR) || [];
+    for (let k = 0; k < hs.length - 1; k++) if (t >= hs[k] && t < hs[k + 1]) return [hs[k], hs[k + 1]];
+    return hs.length > 1 ? (t < hs[0] ? [hs[0], hs[1]] : [hs[hs.length - 2], hs[hs.length - 1]]) : null;
+  }
+
+  function mountDetail(container, a, opts = {}) {
+    destroyPlayers();
+    container.hidden = false;
+    container.innerHTML = detailHTML(a, opts);
+    const q = (sel) => container.querySelector(sel);
     const spec = mainChartSpec(a, theme());
-    $('#res-chart-title').textContent = spec.title; $('#res-chart-note').textContent = spec.note || '';
-    drawChart($('#res-chart'), spec, 250);
-    const s2 = secondChartSpec(a); drawChart($('#res-chart2'), s2, 200);
-    $('#res-notes').value = a.notes || a.interpretation;
+    q('.d-chart-title').textContent = spec.title; q('.d-chart-note').textContent = (spec.note || '') + ' Pulsa en la gráfica para ver ese instante en el vídeo.';
+    drawChart(q('.d-chart'), spec, 250);
+    drawChart(q('.d-chart2'), secondChartSpec(a), 200);
+    const isCycle = a.type === 'gait' && a.cycles && (a.cycles.kneeL || a.cycles.kneeR);
+    const cur1 = addCursor(q('.d-chart')), cur2 = isCycle && q('.d-chart2').querySelector('canvas') ? addCursor(q('.d-chart2')) : () => {};
+    const frames = a.replay && window.MCReplay ? window.MCReplay.decode(a.replay) : [];
+    let player = null;
+    if (frames.length) {
+      player = new window.MCPlayer(q('.d-player'), {
+        frames, w: a.replay.w, h: a.replay.h, videoURL: opts.videoURL, events: a.events,
+        onTime: (t) => {
+          if (isCycle) { const st = strideAt(a, t); const pct = st ? Math.max(0, Math.min(100, (100 * (t - st[0])) / (st[1] - st[0]))) : null; cur1(pct); cur2(pct); }
+          else cur1(t);
+        },
+      });
+      state.players.push(player);
+      [q('.d-chart'), q('.d-chart2')].forEach((box) => box.addEventListener('click', (e) => {
+        const cv = box.querySelector('canvas'); if (!cv) return; const x = chartXAt(cv, e.clientX); if (x == null) return;
+        if (isCycle) { const st = strideAt(a, player.t); if (st) player.seek(st[0] + (Math.max(0, Math.min(100, x)) / 100) * (st[1] - st[0])); }
+        else player.seek(x);
+      }));
+    } else q('.d-player').innerHTML = '<p class="small">Este análisis se hizo con una versión anterior y no guarda la secuencia del movimiento.</p>';
+    const ta = q('.d-notes'); ta.value = a.notes || a.interpretation;
+    ta.addEventListener('change', async () => { a.notes = ta.value; await S.put('analyses', a); toast('Valoración guardada'); });
+    q('.d-csv').onclick = () => exportAnalysisCSV(a);
+    const nb = q('.d-new'); if (nb) nb.onclick = () => { destroyPlayers(); container.hidden = true; window.scrollTo({ top: 0, behavior: 'smooth' }); };
+  }
+
+  function showResult(a) {
+    mountDetail($('#an-result'), a, { videoURL: state.videos[a.id], fresh: true });
     $('#an-result').scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+
+  // Datos del análisis para investigación: series filtradas, eventos y ciclos promedio
+  function exportAnalysisCSV(a) {
+    const p = patientById(a.patientId) || {}, num = (v) => (v == null ? '' : String(v).replace('.', ','));
+    const keys = Object.keys(a.series).filter((k) => k !== 't');
+    const lines = [`# MotionClin · ${p.name || ''} · ${TYPE[a.type]} · ${a.date.slice(0, 10)} · ${a.fs} Hz · filtro ${a.fc} Hz`, ['t (s)', ...keys].join(';')];
+    a.series.t.forEach((t, i) => lines.push([num(t), ...keys.map((k) => num(a.series[k][i]))].join(';')));
+    lines.push('', '# Eventos (s)');
+    for (const [k, v] of Object.entries(a.events || {})) lines.push([k, ...(v || []).map(num)].join(';'));
+    if (a.cycles) {
+      lines.push('', '# Ciclo promedio (0–100 %)', ['%', ...Object.keys(a.cycles).filter((k) => a.cycles[k] && a.cycles[k].mean).flatMap((k) => [k + ' media', k + ' DE'])].join(';'));
+      for (let i = 0; i < 51; i++) lines.push([i * 2, ...Object.keys(a.cycles).filter((k) => a.cycles[k] && a.cycles[k].mean).flatMap((k) => [num(a.cycles[k].mean[i]), num(a.cycles[k].sd[i])])].join(';'));
+    }
+    lines.push('', '# Métricas', 'Parámetro;Media;DE;n;Unidad;Referencia;Valoración;Fiabilidad');
+    for (const m of a.metrics) lines.push([m.label, num(m.value), num(m.sd), m.n == null ? '' : m.n, m.unit, m.ref ? m.ref.text : '', m.eval || '', m.rel || ''].join(';'));
+    saveFile(new Blob(['﻿' + lines.join('\n')], { type: 'text/csv;charset=utf-8' }), `MotionClin_datos_${(p.name || 'paciente').replace(/[^\wáéíóúñü]+/gi, '_')}_${a.type}_${a.date.slice(0, 10)}.csv`);
   }
 
   // ---------- cámara ----------
@@ -542,6 +640,149 @@
     finally { btn.disabled = false; btn.textContent = 'Descargar PDF'; }
   }
 
+  // ======================= comparador antes / después =======================
+  let cmpState = { pid: null, type: null, a: null, b: null };
+  function renderCompare(arg) {
+    const eligible = state.patients.filter((p) => ['gait', 'squat', 'sts', 'balance'].some((t) => sessionsOf(p.id, t).length >= 2));
+    if (arg && arg.includes('~')) { const [ia, ib] = arg.split('~'); const A = state.analyses.find((x) => x.id === ia), B = state.analyses.find((x) => x.id === ib); if (A && B) cmpState = { pid: A.patientId, type: A.type, a: ia, b: ib }; }
+    if (!eligible.length) { $('#cmp-body').innerHTML = '<div class="card empty-state mt"><h3>Hace falta un paciente con al menos dos sesiones de la misma prueba</h3><p>Analiza otra sesión o carga los datos de ejemplo desde Ajustes.</p></div>'; ['#cmp-patient', '#cmp-type', '#cmp-a', '#cmp-b'].forEach((s) => ($(s).innerHTML = '')); return; }
+    if (!eligible.some((p) => p.id === cmpState.pid)) cmpState = { pid: eligible[0].id, type: null, a: null, b: null };
+    $('#cmp-patient').innerHTML = eligible.map((p) => `<option value="${p.id}">${esc(p.name)}</option>`).join(''); $('#cmp-patient').value = cmpState.pid;
+    const types = ['gait', 'squat', 'sts', 'balance'].filter((t) => sessionsOf(cmpState.pid, t).length >= 2);
+    if (!types.includes(cmpState.type)) cmpState.type = types[0];
+    $('#cmp-type').innerHTML = types.map((t) => `<option value="${t}">${TYPE[t]}</option>`).join(''); $('#cmp-type').value = cmpState.type;
+    const ss = sessionsOf(cmpState.pid, cmpState.type);
+    if (!ss.some((x) => x.id === cmpState.a)) cmpState.a = ss[0].id;
+    if (!ss.some((x) => x.id === cmpState.b) || cmpState.b === cmpState.a) cmpState.b = ss[ss.length - 1].id;
+    const opt = ss.map((x, i) => `<option value="${x.id}">S${i + 1} · ${fmtDate(x.date)} · ${esc(fmtValSd(x.main))}</option>`).join('');
+    $('#cmp-a').innerHTML = opt; $('#cmp-b').innerHTML = opt; $('#cmp-a').value = cmpState.a; $('#cmp-b').value = cmpState.b;
+    drawCompare();
+  }
+  function compareChanged(sel) {
+    if (sel === '#cmp-patient') cmpState = { pid: $('#cmp-patient').value, type: null, a: null, b: null };
+    else if (sel === '#cmp-type') Object.assign(cmpState, { type: $('#cmp-type').value, a: null, b: null });
+    else Object.assign(cmpState, { a: $('#cmp-a').value, b: $('#cmp-b').value });
+    renderCompare();
+  }
+  function drawCompare() {
+    destroyPlayers();
+    const A = state.analyses.find((x) => x.id === cmpState.a), B = state.analyses.find((x) => x.id === cmpState.b);
+    if (!A || !B) return;
+    const ia = sessionsOf(A.patientId, A.type).findIndex((x) => x.id === A.id) + 1, ib = sessionsOf(B.patientId, B.type).findIndex((x) => x.id === B.id) + 1;
+    const mc = MM.mainCompare(A, B);
+    const days = Math.round((new Date(B.date) - new Date(A.date)) / 864e5);
+    const head = (x, n, cls) => `<div class="cmp-head ${cls}"><span class="cmp-tag">${cls === 'a' ? 'A' : 'B'} · S${n}</span><span>${fmtDate(x.date)}</span><b class="num">${esc(fmtValSd(x.main))}</b></div>`;
+    const rows = B.metrics.filter((m) => typeof m.value === 'number').map((m) => {
+      const ma = A.metrics.find((x) => x.key === m.key); if (!ma || typeof ma.value !== 'number') return '';
+      const c = MM.compare(A, B).find((x) => x.key === m.key);
+      const d = Math.round((m.value - ma.value) * 100) / 100;
+      const v = c ? (c.relevant ? (c.direction ? `<span class="verdict ${c.direction}">${c.direction === 'mejora' ? 'Mejora' : 'Empeora'}</span>` : '<span class="verdict cambio">Cambio</span>') : '<span class="verdict igual">Sin cambio relevante</span>') : '<span class="small">—</span>';
+      return `<tr><td>${esc(m.label)}</td><td class="num">${esc(fmtValSd(ma))}</td><td class="num">${esc(fmtValSd(m))}</td><td class="num">${d > 0 ? '+' : ''}${dec(d)}</td><td class="num">${c ? fmtP(c.p) : '–'}</td><td>${v}</td></tr>`;
+    }).join('');
+    $('#cmp-body').innerHTML = `
+      <div class="card summary mt"><div><div class="lab">${esc(B.main.label)}</div><div class="big">${mc ? (mc.diff > 0 ? '+' : '') + dec(Math.round(mc.diff * 100) / 100) : '–'}<small>${esc(B.main.unit)}</small></div><div class="small">de S${ia} a S${ib} · ${days} días</div></div>
+        <div><div class="lab">Significación</div><div class="val">${mc && mc.p != null ? 'p ' + fmtP(mc.p) : '–'}</div></div>
+        <div><div class="lab">Tamaño del efecto</div><div class="val">${mc && mc.d != null ? 'd = ' + dec(mc.d.toFixed(2)) : '–'}</div></div>
+        <div><div class="lab">Veredicto</div>${mc && mc.relevant && mc.direction ? `<span class="verdict ${mc.direction}">${mc.direction === 'mejora' ? 'Mejora demostrada' : 'Empeoramiento'}</span>` : '<span class="verdict igual">Sin cambio relevante</span>'}</div></div>
+      <div class="card mt">
+        <h3><span>Movimiento sincronizado</span><span class="small">${A.type === 'gait' ? 'alineado en el primer contacto del talón izquierdo' : 'alineado al inicio del registro'}</span></h3>
+        <div class="grid g2e cmp-players"><div>${head(A, ia, 'a')}<div class="cmp-pl-a"></div></div><div>${head(B, ib, 'b')}<div class="cmp-pl-b"></div></div></div>
+        <div class="pl-controls cmp-ctl">
+          <button class="btn sm primary" id="cmp-play">▶︎ Reproducir</button>
+          <div class="chips" role="group" aria-label="Velocidad">${[0.25, 0.5, 1].map((s2) => `<button class="chip" data-s="${s2}" aria-pressed="${s2 === 0.5}">${s2 === 1 ? '1×' : String(s2).replace('.', ',') + '×'}</button>`).join('')}</div>
+          <input type="range" id="cmp-scrub" min="0" max="1000" value="0" aria-label="Posición" style="flex:1;min-width:120px">
+        </div>
+      </div>
+      <div class="card mt"><h3 id="cmp-chart-title"></h3><div class="chart-box" id="cmp-chart"></div><p class="small">Discontinua: sesión A · continua: sesión B.</p></div>
+      <div class="card mt">${comparePairHTML(A, B, 'Estadística del cambio (A → B)')}</div>
+      <div class="card mt"><h3>Todas las variables</h3><div class="table-wrap"><table class="cmp"><thead><tr><th>Parámetro</th><th>A</th><th>B</th><th>Δ</th><th>p</th><th></th></tr></thead><tbody>${rows}</tbody></table></div></div>`;
+    // reproductores sincronizados
+    const off = (x) => (x.type === 'gait' && x.events && x.events.hsL && x.events.hsL.length ? x.events.hsL[0] : 0);
+    const fa = A.replay ? window.MCReplay.decode(A.replay) : [], fb = B.replay ? window.MCReplay.decode(B.replay) : [];
+    const oa = off(A), ob = off(B);
+    const pa = fa.length ? new window.MCPlayer($('.cmp-pl-a'), { frames: fa, w: A.replay.w, h: A.replay.h, events: A.events, external: true, compact: true }) : null;
+    const pb = fb.length ? new window.MCPlayer($('.cmp-pl-b'), { frames: fb, w: B.replay.w, h: B.replay.h, events: B.events, external: true, compact: true }) : null;
+    [pa, pb].forEach((x) => x && state.players.push(x));
+    if (!pa) $('.cmp-pl-a').innerHTML = '<p class="small">Sin secuencia guardada.</p>'; if (!pb) $('.cmp-pl-b').innerHTML = '<p class="small">Sin secuencia guardada.</p>';
+    const span = Math.max(0.1, Math.min(pa ? pa.duration - oa : 1e9, pb ? pb.duration - ob : 1e9));
+    let t = 0, speed = 0.5, playing = false, raf = null;
+    const set = (tt) => { t = Math.max(0, Math.min(span, tt)); if (pa) pa.setTime(oa + t); if (pb) pb.setTime(ob + t); $('#cmp-scrub').value = Math.round((t / span) * 1000); };
+    const stop = () => { playing = false; cancelAnimationFrame(raf); $('#cmp-play').innerHTML = '▶︎ Reproducir'; };
+    $('#cmp-play').onclick = () => {
+      if (playing) return stop();
+      playing = true; $('#cmp-play').innerHTML = '❚❚ Pausa'; if (t >= span) t = 0; let last = performance.now();
+      const step = (now) => { if (!playing) return; set(t + ((now - last) / 1000) * speed); last = now; if (t >= span) { stop(); return; } raf = requestAnimationFrame(step); };
+      raf = requestAnimationFrame(step);
+    };
+    $$('.cmp-ctl .chip').forEach((b) => (b.onclick = () => { speed = +b.dataset.s; $$('.cmp-ctl .chip').forEach((x) => x.setAttribute('aria-pressed', x === b)); }));
+    $('#cmp-scrub').oninput = (e) => { stop(); set((+e.target.value / 1000) * span); };
+    [pa, pb].forEach((x, k) => x && (x.o.onSeek = (tt) => { stop(); set(tt - (k ? ob : oa)); }));
+    state.players.push({ destroy: stop });
+    set(0);
+    // curvas superpuestas
+    const colors = { L: css('--cyan'), R: css('--amber') };
+    let specC;
+    if (A.type === 'gait' && A.cycles && B.cycles) {
+      const norm = MM.normKnee(51), xs = norm.map((_, k) => k * 2), series = [{ name: 'Referencia ± 1 DE', color: 'rgba(143,165,191,.9)', width: 1, dash: [2, 3], legend: false, data: xs.map((x, k) => [x, norm[k]]), band: xs.map((x, k) => [x, norm[k] - MM.NORM_SD, norm[k] + MM.NORM_SD]), bandColor: 'rgba(143,165,191,.15)' }];
+      for (const s2 of ['L', 'R']) {
+        if (A.cycles['knee' + s2]) series.push({ name: `A ${s2 === 'L' ? 'izq.' : 'der.'}`, color: colors[s2], width: 1.6, dash: [6, 4], data: xs.map((x, k) => [x, A.cycles['knee' + s2].mean[k]]) });
+        if (B.cycles['knee' + s2]) series.push({ name: `B ${s2 === 'L' ? 'izq.' : 'der.'}`, color: colors[s2], width: 2.6, data: xs.map((x, k) => [x, B.cycles['knee' + s2].mean[k]]) });
+      }
+      specC = { title: 'Flexión de rodilla en el ciclo de marcha: A frente a B', opts: { series, yUnit: '°', xFormat: (x) => x + '%', xTicks: [0, 20, 40, 60, 80, 100], yMin: -5 } };
+    } else {
+      const sig = (x) => (x.type === 'sts' ? x.series.pelvis : x.type === 'balance' ? x.series.sway : x.series.kneeL.map((v, i) => (v != null && x.series.kneeR[i] != null ? (v + x.series.kneeR[i]) / 2 : v)));
+      const lab = A.type === 'sts' ? 'Altura de la pelvis (%)' : A.type === 'balance' ? 'Oscilación angular (°)' : 'Flexión media de rodilla (°)';
+      specC = { title: lab + ': A frente a B', opts: { series: [{ name: 'A', color: css('--muted'), width: 1.6, dash: [6, 4], data: A.series.t.map((x, i) => [x, sig(A)[i]]) }, { name: 'B', color: css('--cyan'), width: 2.4, data: B.series.t.map((x, i) => [x, sig(B)[i]]) }], xFormat: (x) => x + 's' } };
+    }
+    $('#cmp-chart-title').textContent = specC.title;
+    drawChart($('#cmp-chart'), specC, 260);
+  }
+
+  // ======================= vídeo de ejemplo =======================
+  async function runSample() {
+    const Y = new Date().getFullYear();
+    let p = patientById('sample-p');
+    if (!p) {
+      p = { id: 'sample-p', demo: true, name: 'Paciente del vídeo de ejemplo', birthYear: Y - 30, heightCm: 165, sex: 'F', condition: 'Clip público de marcha lateral (proyecto Sports2D, licencia BSD-3)', notes: 'Talla, edad y sexo supuestos para el ejemplo: la velocidad y las referencias dependen de ellos.', created: new Date().toISOString() };
+      await S.put('patients', p); state.patients.push(p);
+    }
+    if ((location.hash || '').slice(1) !== 'analisis') location.hash = '#analisis';
+    await new Promise((r) => setTimeout(r, 60));
+    fillPatientSelect($('#an-patient')); $('#an-patient').value = p.id;
+    state.type = 'gait'; $$('#an-type .chip').forEach((x) => x.setAttribute('aria-pressed', x.dataset.type === 'gait')); renderGuide();
+    if (state.src !== 'file') $('#an-source .chip[data-src=file]').click();
+    $('#an-status').textContent = 'Descargando el vídeo de ejemplo…';
+    try {
+      const v = document.createElement('video');
+      const useMp4 = !v.canPlayType('video/webm; codecs="vp9"') && v.canPlayType('video/mp4');
+      const url = useMp4 ? 'samples/marcha-lateral.mp4' : 'samples/marcha-lateral.webm';
+      const blob = await (await fetch(url)).blob();
+      setFile(new File([blob], useMp4 ? 'marcha-lateral.mp4' : 'marcha-lateral.webm', { type: useMp4 ? 'video/mp4' : 'video/webm' }));
+      $('.stage').scrollIntoView({ behavior: 'smooth', block: 'center' });
+      runFile();
+    } catch (e) { toast('No se ha podido cargar el vídeo de ejemplo: ' + e.message, true); }
+  }
+
+  // ======================= bienvenida =======================
+  let wlRaf = null;
+  function openWelcome() {
+    $('#welcome').hidden = false; $('#wl-sample').focus();
+    const cv = $('#wl-canvas'), ctx = cv.getContext('2d');
+    const sim = window.MCSynth.gait({ dur: 6, fps: 30, speed: 1.2, cadence: 108, sizeFrac: 0.42, noise: 0, seed: 7 });
+    const start = performance.now();
+    const loop = (now) => {
+      const i = Math.max(0, Math.floor(((now - start) / 1000) * 30)) % sim.frames.length;
+      const ph = sim.frames[i].lm, cx = (ph[23][0] + ph[24][0]) / 2, cy = (ph[23][1] + ph[24][1]) / 2;
+      const lm = ph.map((p2) => [((p2[0] - cx) * 1280 * 0.82 + 180) / 360, ((p2[1] - cy) * 720 * 0.82 + 135) / 300, 0, p2[3]]);
+      ctx.clearRect(0, 0, 360, 300);
+      ctx.strokeStyle = 'rgba(143,165,191,.35)'; ctx.setLineDash([6, 6]); ctx.beginPath(); const fy = Math.max(...lm.slice(27, 33).map((p2) => p2[1])) * 300 + 4; ctx.moveTo(10, fy); ctx.lineTo(350, fy); ctx.stroke(); ctx.setLineDash([]);
+      window.MCPose.drawFrame(ctx, null, lm, { showAngles: true });
+      if (!$('#welcome').hidden) wlRaf = requestAnimationFrame(loop);
+    };
+    cancelAnimationFrame(wlRaf); wlRaf = requestAnimationFrame(loop);
+  }
+  function closeWelcome() { $('#welcome').hidden = true; cancelAnimationFrame(wlRaf); S.setSetting('welcomed', true); }
+
   // ---------- CSV / copia ----------
   function exportCSV() {
     const q = (v) => { const s = v == null ? '' : String(v); return /[";\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s; };
@@ -571,9 +812,11 @@
     } catch (e) { toast(e.message || 'No se ha podido leer el archivo.', true); }
   }
   async function clearDemo(silent) {
-    for (const a of state.analyses.filter((x) => x.demo)) await S.del('analyses', a.id);
-    for (const p of state.patients.filter((x) => x.demo)) await S.del('patients', p.id);
-    state.analyses = state.analyses.filter((x) => !x.demo); state.patients = state.patients.filter((x) => !x.demo);
+    const keepSample = !!silent;
+    const isDemoA = (x) => x.demo && !(keepSample && x.patientId === 'sample-p'), isDemoP = (x) => x.demo && !(keepSample && x.id === 'sample-p');
+    for (const a of state.analyses.filter(isDemoA)) await S.del('analyses', a.id);
+    for (const p of state.patients.filter(isDemoP)) await S.del('patients', p.id);
+    state.analyses = state.analyses.filter((x) => !isDemoA(x)); state.patients = state.patients.filter((x) => !isDemoP(x));
     if (!silent) { toast('Datos de ejemplo borrados'); route(); }
   }
 
@@ -601,9 +844,14 @@
     $('#an-run').onclick = runFile;
     $('#an-cancel').onclick = () => state.abort && state.abort.abort();
     $('#cam-start').onclick = startCamera; $('#cam-rec').onclick = toggleRecording; $('#cam-stop').onclick = () => { stopCamera(); $('#an-status').textContent = 'Cámara detenida.'; };
-    $('#res-notes').addEventListener('change', async (e) => { if (state.current) { state.current.notes = e.target.value; await S.put('analyses', state.current); toast('Valoración guardada'); } });
-    $('#res-report').onclick = () => { location.hash = '#informe-' + state.current.id; };
-    $('#res-new').onclick = (e) => { e.preventDefault(); $('#an-result').hidden = true; window.scrollTo({ top: 0, behavior: 'smooth' }); };
+    $('#btn-sample').onclick = runSample;
+    $('#wl-sample').onclick = () => { closeWelcome(); runSample(); };
+    $('#wl-explore').onclick = () => { closeWelcome(); location.hash = '#pacientes'; };
+    $('#wl-method').onclick = () => closeWelcome();
+    $('#st-intro').onclick = () => openWelcome();
+    $('#welcome').addEventListener('click', (e) => { if (e.target.id === 'welcome') closeWelcome(); });
+    document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$('#welcome').hidden) closeWelcome(); });
+    ['#cmp-patient', '#cmp-type', '#cmp-a', '#cmp-b'].forEach((sel) => $(sel).addEventListener('change', (e) => compareChanged(sel)));
 
     $('#btn-add-patient').onclick = () => openPatientForm(null);
     $('#pf-save').onclick = savePatient;
@@ -645,6 +893,8 @@
     bind();
     try { await load(); } catch (e) { console.error(e); toast('No se han podido cargar los datos guardados: ' + e.message, true); }
     route();
+    if (!(await S.setting('welcomed', false)) && !navigator.webdriver) openWelcome();
+    if ('serviceWorker' in navigator && !window.claude && /^(https:|http:\/\/localhost)/.test(location.href)) navigator.serviceWorker.register('sw.js').catch((e) => console.warn('Sin modo sin conexión:', e));
     const ms = $('#model-status');
     setTimeout(() => {
       const t0 = performance.now();

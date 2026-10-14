@@ -70,6 +70,14 @@ test('Marcha hacia la izquierda y con intercambios L/R del modelo', () => {
   assert.ok(r.quality.swaps > 0);
   near(get(r, 'kneeSwingL'), g.truth.kneeSwingL, 8, 'rodilla izq.');
 });
+test('Primer fotograma con piernas intercambiadas: no arrastra el error', () => {
+  const g = S.gait({ dur: 8, seed: 41 });
+  const f0 = g.frames[0].lm; for (const [l, r] of [[25, 26], [27, 28], [29, 30], [31, 32]]) { const t = f0[l]; f0[l] = f0[r]; f0[r] = t; }
+  const r = M.analyze('gait', g.frames, g.meta);
+  assert.ok(r.quality.swaps <= 2, `correcciones ${r.quality.swaps}`);
+  near(get(r, 'kneeSwingL'), g.truth.kneeSwingL, 4, 'rodilla izq.');
+});
+
 test('Cámara con fotogramas irregulares (remuestreo)', () => {
   const g = S.gait({ fps: 60, dur: 7, seed: 14 });
   const jitter = g.frames.filter((_, i) => i % 2 === 0 || i % 7 === 3).map((f, i) => ({ t: f.t + (i % 3) * 0.004, lm: f.lm }));
@@ -135,6 +143,18 @@ test('Apoyo monopodal: tiempo hasta apoyar el pie', () => {
   const r = M.analyze('balance', s.frames, s.meta);
   near(get(r, 'monoTime'), 12, 0.6, 'tiempo monopodal');
   assert.ok(/Monopodal/.test(get(r, 'stance')));
+});
+
+test('Secuencia guardada: compacta y fiel (< 0,1 px de error)', () => {
+  const R = require('../js/replay.js');
+  const g = S.gait({ dur: 10, fps: 30, seed: 31 });
+  const enc = R.encode(g.frames, { width: 1280, height: 720 }), dec = R.decode(enc);
+  let mx = 0; dec.forEach((f, i) => f.lm.forEach((p, k) => { mx = Math.max(mx, Math.abs(p[0] - g.frames[i].lm[k][0]) * 1280, Math.abs(p[1] - g.frames[i].lm[k][1]) * 720); }));
+  const kb = JSON.stringify(enc).length / 1024;
+  console.log(`     ${enc.n} fotogramas · ${kb.toFixed(0)} kB · error máx. ${mx.toFixed(3)} px`);
+  assert.ok(mx < 0.1 && kb < 120);
+  const r2 = M.analyze('gait', dec, g.meta), r1 = M.analyze('gait', g.frames, g.meta);
+  near(get(r2, 'cadence'), get(r1, 'cadence'), 0.5, 'mismo resultado tras guardar y recuperar');
 });
 
 test('Sin persona → error claro', () => {

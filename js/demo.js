@@ -44,7 +44,7 @@
       const pat = P[x.p];
       const meta = Object.assign({}, x.sim.meta, { patient: { age: Y - pat.birthYear, sex: pat.sex, heightCm: pat.heightCm }, model: 'sintético' });
       const res = window.MCMetrics.analyze(x.type, x.sim.frames, meta);
-      return Object.assign(res, { id: 'demo-a' + i, demo: true, patientId: x.p, date: new Date(now - x.days * day).toISOString(), source: 'Ejemplo sintético', keyframe: keyframe(x.sim, x.type), notes: '' });
+      return Object.assign(res, { id: 'demo-a' + i, demo: true, patientId: x.p, date: new Date(now - x.days * day).toISOString(), source: 'Ejemplo sintético', keyframe: keyframe(x.sim, x.type), notes: '', replay: window.MCReplay.encode(x.sim.frames, { width: x.sim.meta.width, height: x.sim.meta.height, maxFrames: 450 }) });
     });
     return { patients, analyses };
   }
